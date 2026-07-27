@@ -1,0 +1,58 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_BACKEND_URL: ${PUBLIC_API_URL}
+    restart: unless-stopped
+    networks: [clelia]
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+    restart: unless-stopped
+    depends_on: [mongo, redis]
+    networks: [clelia]
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes: [mongo_data:/data/db]
+    networks: [clelia]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes: [redis_data:/data]
+    networks: [clelia]
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    env_file: .env
+    restart: unless-stopped
+    volumes: [minio_data:/data]
+    networks: [clelia]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [frontend, backend]
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [clelia]
+
+networks:
+  clelia:
+
+volumes:
+  mongo_data:
+  redis_data:
+  minio_data:
+  caddy_data:
+  caddy_config:
