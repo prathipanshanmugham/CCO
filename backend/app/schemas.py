@@ -59,3 +59,7 @@ class ContentSettingsUpdate(BaseModel):
 class AssetGenerationInput(BaseModel):
     design_id: str = Field(min_length=8, max_length=100)
     approved_concept_url: str = Field(min_length=10, max_length=2000)
+
+
+class PaymentStartInput(BaseModel):
+    payment_option: Literal["full", "advance"]

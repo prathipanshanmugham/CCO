@@ -1,0 +1,45 @@
+{
+  "summary": "Iteration 4 validated the new Razorpay + Orders contract end-to-end. Backend: 25/25 pytest passed (11 new in test_orders_payments.py plus prior 14 regression). New coverage: GET /api/orders denied without/invalid bearer (401), authenticated fresh customer -> [] (200), POST /api/orders/{id}/payment returns 404 for missing id and 404 for a Mongo-seeded order owned by another user, returns 503 with 'Secure checkout is not configured yet' when Razorpay creds absent (no leakage of RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET in body), advance option accepted (also -> 503), invalid payment_option -> 422. POST /api/payments/razorpay/webhook -> 401 for both missing X-Razorpay-Signature and invalid signature, no secret leakage. Frontend (1280x900 desktop, preview URL): /orders unauthenticated renders customer-orders-page with orders-sign-in-link + orders-error-message ('Please sign in to see your orders.'). After injecting a real bearer via /api/auth/register, /orders renders orders-empty-state with Package icon, 'Your story starts here.', orders-create-design-link and orders-back-to-studio-link. Root focused designer (/) still renders full 6-step shell with 'Clelia & Co.' branding, ring type selected, welcome dialog visible. No JS pageerrors; only 401 network entries (expected pre-auth /api/orders probe).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/orders/{id}/payment", "issue": "Check order in server.py:191 (payment_ready) runs BEFORE the total>0 check on line 194. When Razorpay is misconfigured a user with an un-approved order gets 'Secure checkout is not configured yet' (503) instead of the more accurate 'Manager must approve the order total' (422). Both are safe rejections; consider re-ordering once credentials are wired so the customer-facing message stays accurate."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/orders unauthenticated state", "issues": ["The 'Please sign in to see your orders.' surface renders the sign-in link and the inline-error stacked with no shared card/heading; it looks like a bare error rather than a considered empty/CTA state. Consider a Package icon + heading + button treatment (mirroring the empty state) with the sign-in link styled as button--plum."]},
+      {"screen": "/orders CustomerOrdersPage error handling", "issues": ["The fetch .catch collapses every failure (network, 500, 401) into 'Please sign in to see your orders.' Even a transient 500 will nudge the user to sign in again. Preserve the response status and branch: 401 -> sign in, other -> retry copy."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_orders_payments.py",
+    "/app/backend/tests/test_manager_content.py",
+    "/app/backend/tests/test_design_guidance.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Re-order server.py start_payment checks so total<=0 -> 422 is raised before the payment_ready() 503 (accuracy for customer-facing copy once creds are wired).",
+    "In CustomerOrdersPage.jsx, distinguish 401 vs other errors and provide a retry state; today all fetch failures collapse to 'Please sign in'.",
+    "Polish the /orders unauthenticated state to match the empty-state visual treatment (icon + heading + CTA button) instead of a bare link + inline error."
+  ],
+  "critical_code_review_comments": [
+    "server.py:184-200 start_payment: order-of-checks issue described above; also `os.environ[\"RAZORPAY_KEY_ID\"]` on line 200 will KeyError if payment_ready() ever passes but the key was removed mid-flight. Prefer os.environ.get plus a graceful 503.",
+    "payments.py:12-14 create_gateway_order does not catch razorpay.errors.BadRequestError / ServerError. A gateway hiccup will bubble up as an unhandled 500 to the customer. Wrap in try/except and translate to a 502/503.",
+    "payments.py:17-19 verify_webhook: KeyError on RAZORPAY_WEBHOOK_SECRET if invoked without payment_ready() short-circuiting. The current server.py uses `if not payment_ready() or not verify_webhook(...)` which is correct, but verify_webhook itself should be defensive (os.environ.get and return False when missing).",
+    "CustomerOrdersPage.jsx: `orders.map` with `order.payment_status.replaceAll` will crash if payment_status is null/undefined. Add a fallback.",
+    "CustomerOrdersPage.jsx: the 'Pay securely' button has data-testid but no onClick handler - it is a dead button today. Either wire it up to POST /api/orders/{id}/payment or hide it until wired.",
+    "server.py CORS middleware is added AFTER app.include_router (line 253). Starlette applies middleware in reverse; this ordering still works but the convention is to add middleware before mounting routers.",
+    "server.py: DEFAULT_CONTENT.updated_at is computed at import time (line 33). Subsequent inserts reuse the same timestamp until process restart; call utc_now() inside get_content_settings when materialising the doc."
+  ],
+  "updated_files": ["/app/backend/tests/test_orders_payments.py"],
+  "success_rate": {"backend": "100% (25/25 pytest, including 11 new payment tests)", "frontend": "100% for the 6 requested checks"},
+  "test_credentials": "From /app/memory/test_credentials.md - Manager manager@cleliastudio-demo.com / Manager!2026Studio, TOTP secret JBSWY3DPEHPK3PXP. Customer accounts are created ad-hoc via /api/auth/register with TEST_ prefix.",
+  "seed_data_creation": "Tests insert transient orders directly into MongoDB (db.orders) with unique uuid ids and cleanup in finally blocks. Two test customers were left in db.users (TEST_orders_* and TEST_ui_* prefixes) - safe, not linked to any orders after teardown.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Payment tests seed orders via motor directly using MONGO_URL + DB_NAME env; they clean up in finally. To exercise real Razorpay flow, main agent must set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET / RAZORPAY_WEBHOOK_SECRET in backend/.env and re-run test_orders_payments.py - the 503 assertions will need to flip to 200 + gateway_order_id. The 'Pay securely' button in CustomerOrdersPage is currently a no-op (no onClick), so end-to-end UI checkout still needs wiring.",
+  "rca_of_the_issue": "No blocking issue. Only one minor server-side ordering nit around 503-vs-422 precedence when both gateway is unconfigured AND total is un-approved."
+}

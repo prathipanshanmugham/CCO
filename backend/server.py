@@ -12,7 +12,8 @@ from starlette.responses import StreamingResponse
 from app.auth import create_access_token, hash_password, read_token, request_ip, require_roles, verify_password
 from app.asset_jobs import asset_pipeline_ready, build_asset_job
 from app.chat_service import stream_design_guidance
-from app.schemas import AssetGenerationInput, ContentSettingsUpdate, DesignGuidanceInput, DesignInput, LoginInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
+from app.payments import create_gateway_order, payment_ready, verify_webhook
+from app.schemas import AssetGenerationInput, ContentSettingsUpdate, DesignGuidanceInput, DesignInput, LoginInput, PaymentStartInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
 from app.services import build_concepts, clean_document, new_id, utc_now
 
 
@@ -178,6 +179,46 @@ async def request_quote(payload: QuoteInput, request: Request, token: dict = Dep
 async def list_orders(token: dict = Depends(read_token)):
     query = {} if token["role"] in ["staff", "manager"] else {"customer_id": token["sub"]}
     return await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+
+
+@api_router.post("/orders/{order_id}/payment")
+async def start_payment(order_id: str, payload: PaymentStartInput, token: dict = Depends(read_token)):
+    order = await db.orders.find_one({"id": order_id, "customer_id": token["sub"]}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.get("payment_status") == "confirmed":
+        raise HTTPException(status_code=409, detail="This order has already been paid")
+    if not payment_ready():
+        raise HTTPException(status_code=503, detail="Secure checkout is not configured yet. Please contact the atelier for help.")
+    total = int(order.get("total") or 0)
+    if total <= 0:
+        raise HTTPException(status_code=422, detail="A Manager must approve the order total before payment")
+    amount = total if payload.payment_option == "full" else round(total * 0.3)
+    gateway_order = create_gateway_order(amount * 100, f"CC-{order_id[:20]}")
+    payment = {"id": new_id(), "order_id": order_id, "gateway": "razorpay", "gateway_ref": gateway_order["id"], "amount": amount, "status": "created", "payment_option": payload.payment_option, "created_at": utc_now()}
+    await db.payments.insert_one(payment.copy())
+    return {"gateway_order_id": gateway_order["id"], "amount": amount * 100, "currency": "INR", "key_id": os.environ["RAZORPAY_KEY_ID"]}
+
+
+@api_router.post("/payments/razorpay/webhook")
+async def razorpay_webhook(request: Request):
+    payload = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+    if not payment_ready() or not verify_webhook(payload, signature):
+        raise HTTPException(status_code=401, detail="Webhook signature is invalid")
+    event = await request.json()
+    if event.get("event") != "payment.captured":
+        return {"status": "ignored"}
+    gateway_order_id = event["payload"]["payment"]["entity"].get("order_id")
+    payment = await db.payments.find_one({"gateway_ref": gateway_order_id}, {"_id": 0})
+    if not payment:
+        return {"status": "ignored"}
+    if payment.get("status") == "captured":
+        return {"status": "already_processed"}
+    await db.payments.update_one({"id": payment["id"]}, {"$set": {"status": "captured", "webhook_payload": event, "captured_at": utc_now()}})
+    await db.orders.update_one({"id": payment["order_id"]}, {"$set": {"payment_status": "confirmed"}, "$push": {"timeline": {"label": "Payment Confirmed", "at": utc_now()}}})
+    await db.asset_jobs.update_many({"order_id": payment["order_id"], "status": "waiting_for_payment"}, {"$set": {"status": "queued"}})
+    return {"status": "processed"}
 
 
 @api_router.patch("/staff/orders/{order_id}")

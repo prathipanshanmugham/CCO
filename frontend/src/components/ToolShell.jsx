@@ -44,7 +44,7 @@ export function ToolShell({ step, children, onHelp }) {
         </div>
         <Link
           className="tool-account"
-          to="/login"
+          to="/orders"
           aria-label="Your account"
           data-testid="tool-account-link"
         >

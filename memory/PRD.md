@@ -50,6 +50,12 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Added the protected design-asset queue contract: it records the approved concept image, owner, status and separate private keys for customer GLB, iOS USDZ and staff manufacturing output.
 - The queue refuses generation until the server has a `FAL_KEY`, preventing partial or unsecured 3D requests. The key is documented in `.env.example` and will be supplied later.
 
+## Commerce foundation — 2026-07-27
+- Added customer Orders route backed by the authenticated order API, with loading, sign-in and empty states.
+- Added a Razorpay server-side payment-order contract supporting Manager-approved full or advance payments, plus idempotent webhook verification before an order becomes paid.
+- Webhook confirmation updates the customer order timeline and only then releases waiting production asset jobs.
+- Added Razorpay SDK and all required gateway/webhook environment documentation; gateway credentials and SMTP delivery credentials are still required for live payment and notifications.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.
