@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import {
   ArrowsOutSimple,
   ArrowCounterClockwise,
@@ -14,14 +14,10 @@ const metalMaterials = {
   "925 Silver": "#b7bdc4",
 };
 
-function RingModel({ metal }) {
-  const ring = useRef();
+function RingModel({ metal, rotation, scale }) {
   const colour = metalMaterials[metal] || metalMaterials["18K Yellow Gold"];
-  useFrame((_, delta) => {
-    ring.current.rotation.y += delta * 0.35;
-  });
   return (
-    <group ref={ring} rotation={[Math.PI / 2, 0, 0]}>
+    <group rotation={[rotation[0], rotation[1], 0]} scale={scale}>
       <mesh castShadow receiveShadow>
         <torusGeometry args={[1.45, 0.18, 42, 128]} />
         <meshStandardMaterial
@@ -30,8 +26,8 @@ function RingModel({ metal }) {
           roughness={0.18}
         />
       </mesh>
-      <mesh position={[0, 1.42, 0]} castShadow>
-        <sphereGeometry args={[0.28, 48, 48]} />
+      <mesh position={[0, 1.43, 0]} castShadow>
+        <sphereGeometry args={[0.34, 48, 48]} />
         <meshPhysicalMaterial
           color="#fffaf5"
           transmission={0.2}
@@ -43,31 +39,34 @@ function RingModel({ metal }) {
   );
 }
 
-function ViewerScene({ metal, controls }) {
-  const { camera } = useThree();
-  controls.current = {
-    reset: () => {
-      camera.position.set(0, 0.3, 5.8);
-      camera.lookAt(0, 0.25, 0);
-    },
-  };
-  return (
-    <>
-      <ambientLight intensity={1.5} />
-      <directionalLight position={[4, 5, 4]} intensity={3.2} castShadow />
-      <directionalLight position={[-4, -2, 3]} intensity={1.2} />
-      <RingModel metal={metal} />
-    </>
-  );
-}
-
 export function JewelleryViewer({ metal, onMetalChange }) {
-  const controls = useRef();
   const frame = useRef();
   const [webglError, setWebglError] = useState(false);
+  const [rotation, setRotation] = useState([0.12, -0.3]);
+  const [scale, setScale] = useState(1);
+  const pointer = useRef(null);
 
-  const resetView = () => controls.current?.reset();
+  const resetView = () => {
+    setRotation([0.12, -0.3]);
+    setScale(1);
+  };
   const openFullscreen = () => frame.current?.requestFullscreen?.();
+  const startDrag = (event) => {
+    pointer.current = { x: event.clientX, y: event.clientY, rotation };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const drag = (event) => {
+    if (!pointer.current) return;
+    const dx = event.clientX - pointer.current.x;
+    const dy = event.clientY - pointer.current.y;
+    setRotation([
+      pointer.current.rotation[0] + dy * 0.012,
+      pointer.current.rotation[1] + dx * 0.012,
+    ]);
+  };
+  const endDrag = () => {
+    pointer.current = null;
+  };
 
   return (
     <section className="jewellery-viewer" data-testid="jewellery-3d-viewer">
@@ -106,6 +105,16 @@ export function JewelleryViewer({ metal, onMetalChange }) {
         className="viewer-canvas"
         ref={frame}
         data-testid="viewer-canvas-container"
+        onPointerDown={startDrag}
+        onPointerMove={drag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onWheel={(event) => {
+          event.preventDefault();
+          setScale((current) =>
+            Math.max(0.72, Math.min(1.55, current - event.deltaY * 0.001)),
+          );
+        }}
       >
         {webglError ? (
           <div
@@ -122,7 +131,10 @@ export function JewelleryViewer({ metal, onMetalChange }) {
             onCreated={({ gl }) => gl.setClearColor("#f3eee7")}
             onError={() => setWebglError(true)}
           >
-            <ViewerScene metal={metal} controls={controls} />
+            <ambientLight intensity={1.5} />
+            <directionalLight position={[4, 5, 4]} intensity={3.2} castShadow />
+            <directionalLight position={[-4, -2, 3]} intensity={1.2} />
+            <RingModel metal={metal} rotation={rotation} scale={scale} />
           </Canvas>
         )}
       </div>

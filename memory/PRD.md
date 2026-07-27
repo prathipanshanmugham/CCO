@@ -38,6 +38,13 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Added Caddy `frame-ancestors` policy for the Clelia store domains, allowing safe iframe embedding without broad framing access.
 - Verified direct-entry, progressive flow, live streamed design guidance, mobile overflow, logo/footer destinations, and customer/staff login surfaces. Backend integration tests: 6/6 passed.
 
+## Viewer, mobile try-on and Manager controls — 2026-07-27
+- Added a working WebGL jewellery preview with explicit canvas dimensions, studio lighting, metal swapping, reset, fullscreen, drag-to-rotate and scroll/pinch-equivalent zoom controls.
+- Added a QR-code mobile handoff from the 3D stage. The code opens the selected jewellery type and metal on a mobile device, where the user can request camera access for try-on.
+- Added Manager-authenticated content settings endpoints and screen for jewellery types, visible-state protection, gold rate and payment handoff mode. Public designer choices now load from the database.
+- Seeded a Manager account with TOTP and documented it in `memory/test_credentials.md` for verified staff access.
+- Verified 14 backend checks and full customer/Manager browser flows: streamed guidance, rendered canvas, material swap, QR dialog, Manager login and saved settings.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.
@@ -45,6 +52,7 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Add secure MinIO private-bucket client, verified payment webhooks, one-time five-minute staff print-file links and complete audit export.
 - Connect image/3D providers after their credentials are supplied; run generation and 3D conversion in Redis-backed workers.
 - Implement real GLB/USdz asset pipeline, interactive viewer controls and device-specific AR.
+- Replace the verified parametric preview with the production GLB/Draco and USDZ pipeline when the image-to-3D provider is selected; add native Android/iOS AR launch adapters.
 
 ### P1
 - PostgreSQL + versioned migrations if the deployment data layer is moved from the current MongoDB starter runtime.

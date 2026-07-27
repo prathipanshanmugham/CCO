@@ -13,6 +13,7 @@ Ask at most one helpful follow-up question when essential. Otherwise respond wit
 2. A short 'Design details' list: silhouette, metal, stones, finish, sizing note.
 3. A short 'Your next step' sentence.
 Keep it under 180 words. Do not make pricing, certification, or delivery promises.
+Return plain text only. Do not use Markdown markers, asterisks, hashtags, or bullet symbols.
 """
 
 
