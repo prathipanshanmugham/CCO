@@ -7,7 +7,8 @@ import {
   Sparkle,
   UserCircle,
 } from "@phosphor-icons/react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { SiteShell } from "../components/SiteShell";
 
 const images = [
@@ -140,6 +141,51 @@ export function ViewerPage({ ar = false }) {
 
 export function LoginPage({ staff = false, signup = false }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    const endpoint = staff
+      ? "/api/auth/staff/login"
+      : signup
+        ? "/api/auth/register"
+        : "/api/auth/login";
+    const body = staff
+      ? { email, password, otp }
+      : signup
+        ? { name: "Clelia Customer", email, password }
+        : { email, password };
+    const response = await fetch(
+      `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok)
+      return setError(
+        typeof data.detail === "string"
+          ? data.detail
+          : "Please check your details and try again.",
+      );
+    localStorage.setItem(
+      staff ? "clelia-staff-token" : "clelia-customer-token",
+      data.token,
+    );
+    navigate(
+      staff && data.user.role === "manager"
+        ? "/staff/settings"
+        : staff
+          ? "/staff"
+          : "/",
+    );
+  };
   return (
     <div
       className="auth-page"
@@ -172,7 +218,7 @@ export function LoginPage({ staff = false, signup = false }) {
               ? "Create an account to keep every design, consultation and commission close."
               : "Sign in to save designs, track commissions and return to your vault."}
         </p>
-        <form onSubmit={(event) => event.preventDefault()}>
+        <form onSubmit={submit}>
           {signup && (
             <label>
               Full name
@@ -187,6 +233,8 @@ export function LoginPage({ staff = false, signup = false }) {
             <input
               type="email"
               placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               data-testid={`${staff ? "staff" : "customer"}-email-input`}
             />
           </label>
@@ -195,6 +243,8 @@ export function LoginPage({ staff = false, signup = false }) {
             <input
               type="password"
               placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               data-testid={`${staff ? "staff" : "customer"}-password-input`}
             />
           </label>
@@ -205,6 +255,8 @@ export function LoginPage({ staff = false, signup = false }) {
                 inputMode="numeric"
                 maxLength="6"
                 placeholder="000000"
+                value={otp}
+                onChange={(event) => setOtp(event.target.value)}
                 data-testid="staff-totp-input"
               />
             </label>
@@ -216,6 +268,11 @@ export function LoginPage({ staff = false, signup = false }) {
             {signup ? "Create account" : "Continue"} <CaretRight size={17} />
           </button>
         </form>
+        {error && (
+          <p className="inline-error" data-testid="auth-error-message">
+            {error}
+          </p>
+        )}
         {!staff && (
           <>
             <div className="auth-divider">or</div>

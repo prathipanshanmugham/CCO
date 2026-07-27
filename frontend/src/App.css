@@ -1332,13 +1332,174 @@ h2 {
 
 .design-review {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
   gap: 3rem;
   align-items: center;
   margin-top: 3rem;
   padding: 2rem;
   border: 1px solid var(--clelia-champagne);
   background: white;
+}
+
+.jewellery-viewer {
+  min-width: 0;
+}
+
+.viewer-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.viewer-toolbar label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--clelia-plum);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.viewer-toolbar select {
+  appearance: none;
+  padding: 0.45rem 1.5rem 0.45rem 0.6rem;
+  border: 1px solid var(--clelia-champagne);
+  background: white;
+  color: var(--clelia-ink);
+  font-size: 0.68rem;
+}
+
+.viewer-toolbar label svg {
+  position: absolute;
+  right: 0.4rem;
+  pointer-events: none;
+}
+
+.viewer-toolbar > div {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.viewer-toolbar button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--clelia-champagne);
+  background: white;
+  color: var(--clelia-plum);
+}
+
+.viewer-canvas {
+  position: relative;
+  min-height: 400px;
+  overflow: hidden;
+  background: #f3eee7;
+}
+
+.viewer-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 400px !important;
+  touch-action: none;
+}
+
+.viewer-fallback {
+  display: grid;
+  min-height: 400px;
+  place-items: center;
+  padding: 2rem;
+  color: #665d57;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.viewer-caption {
+  margin: 0.75rem 0 0;
+  color: #756b63;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+
+.viewer-copy {
+  display: grid;
+  align-content: center;
+  gap: 1.2rem;
+}
+
+.viewer-copy .guidance-copy {
+  margin: 0;
+}
+
+.viewer-copy .button {
+  width: fit-content;
+}
+
+.tryon-overlay {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(28, 28, 28, 0.52);
+}
+
+.tryon-dialog {
+  position: relative;
+  width: min(100%, 460px);
+  padding: 2.5rem;
+  background: var(--clelia-ivory);
+  box-shadow: 0 24px 60px rgba(28, 28, 28, 0.2);
+}
+
+.tryon-dialog h2 {
+  margin-bottom: 0.8rem;
+  font-size: 2.5rem;
+}
+
+.tryon-dialog > p:not(.eyebrow) {
+  color: #625a54;
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--clelia-champagne);
+  background: white;
+  color: var(--clelia-plum);
+}
+
+.qr-wrap {
+  display: grid;
+  width: fit-content;
+  margin: 1.4rem auto;
+  padding: 0.8rem;
+  background: white;
+  border: 1px solid var(--clelia-champagne);
+}
+
+.tryon-dialog video {
+  display: none;
+  width: 100%;
+  max-height: 250px;
+  margin-top: 1rem;
+  background: #171717;
+}
+
+.tryon-dialog video[src] {
+  display: block;
 }
 
 .review-jewel {
@@ -1502,6 +1663,13 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .viewer-canvas,
+  .viewer-canvas canvas,
+  .viewer-fallback {
+    min-height: 320px;
+    height: 320px !important;
+  }
+
   .focused-grid .type-card {
     min-height: 85px;
   }
@@ -1537,4 +1705,60 @@ h2 {
 .type-card.is-selected .type-index,
 .type-card:hover .type-index {
   color: #eadfd4;
+}
+
+.manager-settings {
+  width: min(100% - 3rem, 820px);
+  margin: 0 auto;
+  padding: 5rem 0;
+}
+
+.manager-settings > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 3rem;
+  color: var(--clelia-plum);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.manager-settings section {
+  display: grid;
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--clelia-champagne);
+  background: white;
+}
+
+.manager-settings h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+}
+
+.manager-settings input,
+.manager-settings select {
+  min-height: 42px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--clelia-champagne);
+  background: white;
+}
+
+.manager-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.7rem;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.manager-row input[type="checkbox"] {
+  min-height: auto;
+}
+
+.manager-status {
+  margin-top: 1rem;
+  color: var(--clelia-plum);
 }

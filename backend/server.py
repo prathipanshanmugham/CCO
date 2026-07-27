@@ -11,7 +11,7 @@ from starlette.responses import StreamingResponse
 
 from app.auth import create_access_token, hash_password, read_token, request_ip, require_roles, verify_password
 from app.chat_service import stream_design_guidance
-from app.schemas import DesignGuidanceInput, DesignInput, LoginInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
+from app.schemas import ContentSettingsUpdate, DesignGuidanceInput, DesignInput, LoginInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
 from app.services import build_concepts, clean_document, new_id, utc_now
 
 
@@ -28,9 +28,52 @@ async def audit(actor_id: str, action: str, entity_type: str, entity_id: str, ip
     await db.audit_logs.insert_one({"id": new_id(), "actor_id": actor_id, "action": action, "entity_type": entity_type, "entity_id": entity_id, "ip": ip, "metadata": metadata or {}, "created_at": utc_now()})
 
 
+DEFAULT_CONTENT = {"id": "customer_tool", "jewellery_types": [{"name": item, "visible": True} for item in ["Ring", "Pendant", "Bracelet", "Earrings", "Necklace", "Bangle"]], "example_ideas": {"Ring": ["A slim rose-gold band with a single oval ruby and tiny milgrain detailing along the edges.", "A timeless yellow-gold ring with a round diamond for our tenth anniversary.", "A simple platinum band with our initials hidden inside.", "A floral-inspired ring in white gold with a delicate sapphire centre."], "Pendant": ["A small yellow-gold pendant inspired by a lotus, with a single diamond at its heart.", "A modern rose-gold initial pendant for my daughter.", "A temple-style pendant with antique finish and ruby accents.", "A simple everyday pendant with an emerald-cut sapphire."]}, "metals": ["18K Yellow Gold", "18K Rose Gold", "18K White Gold", "Platinum", "925 Silver"], "payment_mode": "self_contained", "gold_rate_per_gram": 7420.0, "updated_at": utc_now()}
+
+
+async def get_content_settings() -> dict:
+    settings = await db.content_settings.find_one({"id": "customer_tool"}, {"_id": 0})
+    if settings:
+        return settings
+    await db.content_settings.insert_one(DEFAULT_CONTENT.copy())
+    return DEFAULT_CONTENT.copy()
+
+
+@app.on_event("startup")
+async def ensure_manager_account():
+    email = os.environ["MANAGER_EMAIL"].lower()
+    manager = await db.users.find_one({"email": email}, {"_id": 0})
+    if manager:
+        return
+    await db.users.insert_one({"id": new_id(), "name": "Clelia Studio Manager", "email": email, "role": "manager", "password_hash": hash_password(os.environ["MANAGER_PASSWORD"]), "totp_secret": os.environ["MANAGER_TOTP_SECRET"], "status": "active", "created_at": utc_now()})
+
+
 @api_router.get("/health")
 async def health():
     return {"status": "healthy", "service": "clelia-design-studio"}
+
+
+@api_router.get("/content")
+async def public_content():
+    return await get_content_settings()
+
+
+@api_router.get("/manager/content")
+async def manager_content(token: dict = Depends(require_roles("manager"))):
+    return await get_content_settings()
+
+
+@api_router.put("/manager/content")
+async def update_manager_content(payload: ContentSettingsUpdate, request: Request, token: dict = Depends(require_roles("manager"))):
+    changes = {key: value for key, value in payload.model_dump(exclude_none=True).items()}
+    if not changes:
+        raise HTTPException(status_code=422, detail="Choose at least one setting to update")
+    if "jewellery_types" in changes and not any(item.get("visible") for item in changes["jewellery_types"]):
+        raise HTTPException(status_code=422, detail="At least one jewellery type must remain visible")
+    changes["updated_at"] = utc_now()
+    await db.content_settings.update_one({"id": "customer_tool"}, {"$set": changes, "$setOnInsert": {"id": "customer_tool"}}, upsert=True)
+    await audit(token["sub"], "customer_content_updated", "content_settings", "customer_tool", request_ip(request), {"fields": list(changes.keys())})
+    return await get_content_settings()
 
 
 @api_router.post("/design-guidance/stream")

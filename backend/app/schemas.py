@@ -46,3 +46,11 @@ class DesignGuidanceInput(BaseModel):
     jewellery_type: str = Field(min_length=2, max_length=60)
     description: str = Field(min_length=12, max_length=1600)
     specifications: dict[str, Any] = {}
+
+
+class ContentSettingsUpdate(BaseModel):
+    jewellery_types: list[dict[str, Any]] | None = None
+    example_ideas: dict[str, list[str]] | None = None
+    metals: list[str] | None = None
+    payment_mode: Literal["self_contained", "handoff"] | None = None
+    gold_rate_per_gram: float | None = Field(default=None, gt=0)
