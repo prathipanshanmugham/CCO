@@ -7,25 +7,56 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function CustomerOrdersPage() {
   const [orders, setOrders] = useState(null);
   const [error, setError] = useState("");
+  const [paymentMessage, setPaymentMessage] = useState("");
   const token = localStorage.getItem("clelia-customer-token");
 
   useEffect(() => {
     fetch(`${API}/orders`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject(response.status),
+      )
       .then(setOrders)
-      .catch(() => setError("Please sign in to see your orders."));
+      .catch((status) =>
+        setError(
+          status === 401
+            ? "Please sign in to see your orders."
+            : "We could not load your orders. Please try again.",
+        ),
+      );
   }, [token]);
+
+  const startPayment = async (orderId) => {
+    const response = await fetch(`${API}/orders/${orderId}/payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ payment_option: "full" }),
+    });
+    const data = await response.json();
+    setPaymentMessage(
+      response.ok
+        ? "Your secure payment window is ready to open."
+        : data.detail || "We could not start secure payment. Please try again.",
+    );
+  };
 
   if (error)
     return (
       <main className="orders-application" data-testid="customer-orders-page">
-        <Link
-          to="/login"
-          className="underlined-link"
-          data-testid="orders-sign-in-link"
-        >
-          Sign in to view orders
-        </Link>
+        <section className="orders-empty">
+          <Package size={36} />
+          <h2>Keep every commission close.</h2>
+          <p>{error}</p>
+          <Link
+            to="/login"
+            className="button button--plum"
+            data-testid="orders-sign-in-link"
+          >
+            Sign in to view orders
+          </Link>
+        </section>
         <p className="inline-error" data-testid="orders-error-message">
           {error}
         </p>
@@ -68,7 +99,10 @@ export default function CustomerOrdersPage() {
               <div>
                 <p className="eyebrow">{order.production_status}</p>
                 <h2>{order.design_id}</h2>
-                <p>Payment: {order.payment_status.replaceAll("_", " ")}</p>
+                <p>
+                  Payment:{" "}
+                  {(order.payment_status || "pending").replaceAll("_", " ")}
+                </p>
               </div>
               <div>
                 <strong>
@@ -79,6 +113,7 @@ export default function CustomerOrdersPage() {
                 {order.payment_status !== "confirmed" && order.total ? (
                   <button
                     className="button button--plum"
+                    onClick={() => startPayment(order.id)}
                     data-testid={`pay-order-${order.id}`}
                   >
                     <CreditCard size={17} /> Pay securely
@@ -87,6 +122,11 @@ export default function CustomerOrdersPage() {
               </div>
             </article>
           ))}
+          {paymentMessage && (
+            <p className="inline-error" data-testid="payment-message">
+              {paymentMessage}
+            </p>
+          )}
         </section>
       )}
     </main>

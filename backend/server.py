@@ -188,16 +188,19 @@ async def start_payment(order_id: str, payload: PaymentStartInput, token: dict =
         raise HTTPException(status_code=404, detail="Order not found")
     if order.get("payment_status") == "confirmed":
         raise HTTPException(status_code=409, detail="This order has already been paid")
-    if not payment_ready():
-        raise HTTPException(status_code=503, detail="Secure checkout is not configured yet. Please contact the atelier for help.")
     total = int(order.get("total") or 0)
     if total <= 0:
         raise HTTPException(status_code=422, detail="A Manager must approve the order total before payment")
+    if not payment_ready():
+        raise HTTPException(status_code=503, detail="Secure checkout is not configured yet. Please contact the atelier for help.")
     amount = total if payload.payment_option == "full" else round(total * 0.3)
-    gateway_order = create_gateway_order(amount * 100, f"CC-{order_id[:20]}")
+    try:
+        gateway_order = create_gateway_order(amount * 100, f"CC-{order_id[:20]}")
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     payment = {"id": new_id(), "order_id": order_id, "gateway": "razorpay", "gateway_ref": gateway_order["id"], "amount": amount, "status": "created", "payment_option": payload.payment_option, "created_at": utc_now()}
     await db.payments.insert_one(payment.copy())
-    return {"gateway_order_id": gateway_order["id"], "amount": amount * 100, "currency": "INR", "key_id": os.environ["RAZORPAY_KEY_ID"]}
+    return {"gateway_order_id": gateway_order["id"], "amount": amount * 100, "currency": "INR", "key_id": os.environ.get("RAZORPAY_KEY_ID")}
 
 
 @api_router.post("/payments/razorpay/webhook")
