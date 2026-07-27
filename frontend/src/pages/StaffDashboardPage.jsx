@@ -1,11 +1,187 @@
-import { ChartLineUp, Cube, FileArrowDown, GearSix, ListChecks, SignOut, UsersThree } from "@phosphor-icons/react";
+import {
+  ChartLineUp,
+  Cube,
+  FileArrowDown,
+  GearSix,
+  ListChecks,
+  SignOut,
+  UsersThree,
+} from "@phosphor-icons/react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-const orders = [{ id: "CC-2481", client: "Ananya Mehta", piece: "Emerald Signet Ring", value: "₹1,84,000", state: "New", due: "18 Jun" }, { id: "CC-2474", client: "Rohan Bhatia", piece: "Diamond Tennis Bracelet", value: "₹2,76,000", state: "In Production", due: "12 Jun" }, { id: "CC-2468", client: "Mira Kapoor", piece: "Temple Pendant", value: "₹94,500", state: "QC", due: "09 Jun" }];
+const orders = [
+  {
+    id: "CC-2481",
+    client: "Ananya Mehta",
+    piece: "Emerald Signet Ring",
+    value: "₹1,84,000",
+    state: "New",
+    due: "18 Jun",
+  },
+  {
+    id: "CC-2474",
+    client: "Rohan Bhatia",
+    piece: "Diamond Tennis Bracelet",
+    value: "₹2,76,000",
+    state: "In Production",
+    due: "12 Jun",
+  },
+  {
+    id: "CC-2468",
+    client: "Mira Kapoor",
+    piece: "Temple Pendant",
+    value: "₹94,500",
+    state: "QC",
+    due: "09 Jun",
+  },
+];
 
 export default function StaffDashboardPage() {
   const [active, setActive] = useState("Order Queue");
-  const nav = [[ListChecks, "Order Queue"], [Cube, "Production Tracker"], [UsersThree, "Clients"], [ChartLineUp, "Analytics"], [GearSix, "Settings"]];
-  return <div className="staff-app" data-testid="staff-dashboard-page"><aside className="staff-sidebar" data-testid="staff-sidebar"><img src="/assets/clelia-logo.png" alt="Clelia & Co." data-testid="staff-logo-image" /><p className="staff-label">Atelier portal</p><nav>{nav.map(([Icon, label]) => <button key={label} onClick={() => setActive(label)} className={active === label ? "is-active" : ""} data-testid={`staff-nav-${label.toLowerCase().replaceAll(" ", "-")}`}><Icon size={20} weight="light" />{label}</button>)}</nav><Link to="/staff/login" data-testid="staff-signout-link"><SignOut size={19} /> Sign out</Link></aside><main className="staff-content"><header><div><p className="eyebrow">Wednesday, 04 June</p><h1 data-testid="staff-page-title">{active}</h1></div><button className="icon-link staff-profile" data-testid="staff-profile-button">AM</button></header><section className="staff-metrics" data-testid="staff-metrics"><div><span>Open orders</span><strong>24</strong><small>8 due this week</small></div><div><span>In production</span><strong>16</strong><small>+3 from last week</small></div><div><span>Awaiting QC</span><strong>05</strong><small>2 priority</small></div><div><span>Value in pipeline</span><strong>₹18.4L</strong><small>Across all active orders</small></div></section><section className="orders-panel"><div className="panel-heading"><div><h2>Active commissions</h2><p data-testid="orders-panel-description">Refined work, moving through the atelier.</p></div><button className="button button--outline" data-testid="order-filter-button">Filter orders</button></div><div className="orders-table" data-testid="staff-orders-table"><div className="table-row table-head"><span>Commission</span><span>Piece</span><span>Stage</span><span>Due</span><span /></div>{orders.map((order) => <div className="table-row" key={order.id} data-testid={`staff-order-${order.id.toLowerCase()}`}><span><strong>{order.id}</strong><small>{order.client}</small></span><span>{order.piece}<small>{order.value}</small></span><span><i className={`status-dot status-${order.state.toLowerCase().replaceAll(" ", "-")}`} />{order.state}</span><span>{order.due}</span><button className="table-action" data-testid={`open-order-${order.id.toLowerCase()}`}>Open</button></div>)}</div></section><section className="secure-panel" data-testid="secure-print-files-panel"><div><p className="eyebrow">Restricted production assets</p><h2>Manufacturing files</h2><p>Available only after verified payment confirmation. Every access is logged.</p></div><button className="button button--dark" onClick={() => setActive("Production Tracker")} data-testid="review-secure-files-button"><FileArrowDown size={18} /> Review access</button></section></main></div>;
+  const nav = [
+    [ListChecks, "Order Queue"],
+    [Cube, "Production Tracker"],
+    [UsersThree, "Clients"],
+    [ChartLineUp, "Analytics"],
+    [GearSix, "Settings"],
+  ];
+  return (
+    <div className="staff-app" data-testid="staff-dashboard-page">
+      <aside className="staff-sidebar" data-testid="staff-sidebar">
+        <img
+          src="/assets/clelia-logo.png"
+          alt="Clelia & Co."
+          data-testid="staff-logo-image"
+        />
+        <p className="staff-label">Atelier portal</p>
+        <nav>
+          {nav.map(([Icon, label]) => (
+            <button
+              key={label}
+              onClick={() => setActive(label)}
+              className={active === label ? "is-active" : ""}
+              data-testid={`staff-nav-${label.toLowerCase().replaceAll(" ", "-")}`}
+            >
+              <Icon size={20} weight="light" />
+              {label}
+            </button>
+          ))}
+        </nav>
+        <Link to="/staff/login" data-testid="staff-signout-link">
+          <SignOut size={19} /> Sign out
+        </Link>
+      </aside>
+      <main className="staff-content">
+        <header>
+          <div>
+            <p className="eyebrow">Wednesday, 04 June</p>
+            <h1 data-testid="staff-page-title">{active}</h1>
+          </div>
+          <button
+            className="icon-link staff-profile"
+            data-testid="staff-profile-button"
+          >
+            AM
+          </button>
+        </header>
+        <section className="staff-metrics" data-testid="staff-metrics">
+          <div>
+            <span>Open orders</span>
+            <strong>24</strong>
+            <small>8 due this week</small>
+          </div>
+          <div>
+            <span>In production</span>
+            <strong>16</strong>
+            <small>+3 from last week</small>
+          </div>
+          <div>
+            <span>Awaiting QC</span>
+            <strong>05</strong>
+            <small>2 priority</small>
+          </div>
+          <div>
+            <span>Value in pipeline</span>
+            <strong>₹18.4L</strong>
+            <small>Across all active orders</small>
+          </div>
+        </section>
+        <section className="orders-panel">
+          <div className="panel-heading">
+            <div>
+              <h2>Active commissions</h2>
+              <p data-testid="orders-panel-description">
+                Refined work, moving through the atelier.
+              </p>
+            </div>
+            <button
+              className="button button--outline"
+              data-testid="order-filter-button"
+            >
+              Filter orders
+            </button>
+          </div>
+          <div className="orders-table" data-testid="staff-orders-table">
+            <div className="table-row table-head">
+              <span>Commission</span>
+              <span>Piece</span>
+              <span>Stage</span>
+              <span>Due</span>
+              <span />
+            </div>
+            {orders.map((order) => (
+              <div
+                className="table-row"
+                key={order.id}
+                data-testid={`staff-order-${order.id.toLowerCase()}`}
+              >
+                <span>
+                  <strong>{order.id}</strong>
+                  <small>{order.client}</small>
+                </span>
+                <span>
+                  {order.piece}
+                  <small>{order.value}</small>
+                </span>
+                <span>
+                  <i
+                    className={`status-dot status-${order.state.toLowerCase().replaceAll(" ", "-")}`}
+                  />
+                  {order.state}
+                </span>
+                <span>{order.due}</span>
+                <button
+                  className="table-action"
+                  data-testid={`open-order-${order.id.toLowerCase()}`}
+                >
+                  Open
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section
+          className="secure-panel"
+          data-testid="secure-print-files-panel"
+        >
+          <div>
+            <p className="eyebrow">Restricted production assets</p>
+            <h2>Manufacturing files</h2>
+            <p>
+              Available only after verified payment confirmation. Every access
+              is logged.
+            </p>
+          </div>
+          <button
+            className="button button--dark"
+            onClick={() => setActive("Production Tracker")}
+            data-testid="review-secure-files-button"
+          >
+            <FileArrowDown size={18} /> Review access
+          </button>
+        </section>
+      </main>
+    </div>
+  );
 }
