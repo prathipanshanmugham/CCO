@@ -1207,8 +1207,15 @@ h2 {
 .focused-grid .type-card {
   min-height: 130px;
   align-items: flex-start;
+  background: transparent;
+  color: var(--clelia-ink);
   font-family: "Playfair Display", serif;
   font-size: 1.4rem;
+}
+
+.focused-grid .type-card.is-selected {
+  background: var(--clelia-plum);
+  color: var(--clelia-ivory);
 }
 
 .description-step {

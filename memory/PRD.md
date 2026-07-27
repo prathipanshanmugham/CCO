@@ -31,12 +31,20 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Dockerfiles, Docker Compose, Caddy security headers and environment example.
 - Verified production frontend build and automated UI flow: 34/34 checks passed before follow-up polish fixes; final signup and logo state also verified.
 
+## v2 Revision Implemented — 2026-07-27
+- Reframed the customer experience as a direct-entry embedded design tool: opening the root URL enters step 1, with a focused logo/progress/account header and a minimal return/help footer.
+- Added query-driven type selection (`?type=ring`), a six-step plain-language flow, first-visit guide, replayable help, example ideas, inline validation, and explicit back navigation.
+- Added OpenAI streamed design guidance at `POST /api/design-guidance/stream`. The provider key is server-side only; customer descriptions and generated guidance are stored as persistent messages.
+- Added Caddy `frame-ancestors` policy for the Clelia store domains, allowing safe iframe embedding without broad framing access.
+- Verified direct-entry, progressive flow, live streamed design guidance, mobile overflow, logo/footer destinations, and customer/staff login surfaces. Backend integration tests: 6/6 passed.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.
+- Persist the six-step confirmed design, honour `return_url` through signed handoff mode, and complete Manager configuration for self-contained versus ecommerce handoff.
 - Add secure MinIO private-bucket client, verified payment webhooks, one-time five-minute staff print-file links and complete audit export.
-- Connect chosen AI providers after credentials are supplied; run generation and 3D conversion in Redis-backed workers.
-- Implement persistent customer designs, quote requests, order data and staff actions across UI/API.
+- Connect image/3D providers after their credentials are supplied; run generation and 3D conversion in Redis-backed workers.
+- Implement real GLB/USdz asset pipeline, interactive viewer controls and device-specific AR.
 
 ### P1
 - PostgreSQL + versioned migrations if the deployment data layer is moved from the current MongoDB starter runtime.
@@ -47,6 +55,6 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - SEO sitemap/Open Graph production automation, loyalty/referrals, gold-rate alerts, gallery consent workflow, booking and reporting extensions.
 
 ## Next tasks
-1. Receive AI provider and transactional-service credentials.
-2. Wire API data to the current customer and staff journeys.
-3. Complete the payment-to-manufacturing security chain before any live order acceptance.
+1. Build the Manager content/settings editor so every customer-facing type, field, prompt, feature and payment mode is database-managed.
+2. Wire confirmed designs, signed ecommerce handoff and live staff order data through the current flow.
+3. Complete the payment-to-manufacturing security chain and verified 3D/AR asset pipeline before any live order acceptance.

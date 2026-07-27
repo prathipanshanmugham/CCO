@@ -78,6 +78,7 @@ export default function DesignStudioPage() {
   const [guidance, setGuidance] = useState("");
   const [isGuiding, setIsGuiding] = useState(false);
   const [error, setError] = useState("");
+  const [sessionId] = useState(() => crypto.randomUUID());
   const examples = typeExamples[type] || typeExamples.Ring;
 
   useEffect(() => {
@@ -92,10 +93,14 @@ export default function DesignStudioPage() {
   const moveForward = async () => {
     setError("");
     if (step === 1) return setStep(2);
-    if (step === 2 && description.trim().length < 12)
-      return setError(
-        "Please add a little more detail so we can understand the piece you have in mind.",
-      );
+    if (step === 2) {
+      if (description.trim().length < 12) {
+        return setError(
+          "Please add a little more detail so we can understand the piece you have in mind.",
+        );
+      }
+      return setStep(3);
+    }
     if (step === 3) return setStep(4);
     if (step === 4) {
       setIsGuiding(true);
@@ -107,7 +112,7 @@ export default function DesignStudioPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              session_id: crypto.randomUUID(),
+              session_id: sessionId,
               jewellery_type: type,
               description,
               specifications: { metal },
