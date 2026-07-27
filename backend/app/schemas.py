@@ -54,3 +54,8 @@ class ContentSettingsUpdate(BaseModel):
     metals: list[str] | None = None
     payment_mode: Literal["self_contained", "handoff"] | None = None
     gold_rate_per_gram: float | None = Field(default=None, gt=0)
+
+
+class AssetGenerationInput(BaseModel):
+    design_id: str = Field(min_length=8, max_length=100)
+    approved_concept_url: str = Field(min_length=10, max_length=2000)

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Camera, X } from "@phosphor-icons/react";
+import { Camera, WhatsappLogo, X } from "@phosphor-icons/react";
 import { QRCodeSVG } from "qrcode.react";
 
 export function TryOnShare({ jewelleryType, metal, onClose }) {
@@ -10,6 +10,11 @@ export function TryOnShare({ jewelleryType, metal, onClose }) {
     () =>
       `${window.location.origin}/?type=${encodeURIComponent(jewelleryType)}&metal=${encodeURIComponent(metal)}&tryon=1`,
     [jewelleryType, metal],
+  );
+  const whatsappLink = useMemo(
+    () =>
+      `https://wa.me/?text=${encodeURIComponent(`Take a look at my Clelia & Co. ${jewelleryType} design: ${mobileLink}`)}`,
+    [jewelleryType, mobileLink],
   );
 
   useEffect(
@@ -57,6 +62,15 @@ export function TryOnShare({ jewelleryType, metal, onClose }) {
         <div className="qr-wrap" data-testid="tryon-qr-code">
           <QRCodeSVG value={mobileLink} size={176} includeMargin />
         </div>
+        <a
+          className="button button--outline whatsapp-share"
+          href={whatsappLink}
+          target="_blank"
+          rel="noreferrer"
+          data-testid="share-tryon-whatsapp-link"
+        >
+          <WhatsappLogo size={18} /> Send with WhatsApp
+        </a>
         <button
           className="button button--plum"
           onClick={openCamera}

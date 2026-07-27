@@ -10,8 +10,9 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
 
 from app.auth import create_access_token, hash_password, read_token, request_ip, require_roles, verify_password
+from app.asset_jobs import asset_pipeline_ready, build_asset_job
 from app.chat_service import stream_design_guidance
-from app.schemas import ContentSettingsUpdate, DesignGuidanceInput, DesignInput, LoginInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
+from app.schemas import AssetGenerationInput, ContentSettingsUpdate, DesignGuidanceInput, DesignInput, LoginInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
 from app.services import build_concepts, clean_document, new_id, utc_now
 
 
@@ -146,6 +147,20 @@ async def list_designs(token: dict = Depends(read_token)):
     query = {} if token["role"] in ["staff", "manager"] else {"customer_id": token["sub"]}
     designs = await db.designs.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return designs
+
+
+@api_router.post("/designs/assets")
+async def queue_design_assets(payload: AssetGenerationInput, request: Request, token: dict = Depends(read_token)):
+    design = await db.designs.find_one({"id": payload.design_id, "customer_id": token["sub"]}, {"_id": 0})
+    if not design:
+        raise HTTPException(status_code=404, detail="Design not found")
+    if not asset_pipeline_ready():
+        raise HTTPException(status_code=503, detail="3D asset preparation is not configured yet. Please contact the atelier for help.")
+    job = build_asset_job(payload.design_id, payload.approved_concept_url, token["sub"], new_id(), utc_now())
+    await db.asset_jobs.insert_one(job.copy())
+    await db.designs.update_one({"id": payload.design_id}, {"$set": {"asset_status": "queued"}})
+    await audit(token["sub"], "design_asset_job_queued", "design", payload.design_id, request_ip(request), {"job_id": job["id"]})
+    return {"id": job["id"], "status": job["status"]}
 
 
 @api_router.post("/quotes")

@@ -45,6 +45,11 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Seeded a Manager account with TOTP and documented it in `memory/test_credentials.md` for verified staff access.
 - Verified 14 backend checks and full customer/Manager browser flows: streamed guidance, rendered canvas, material swap, QR dialog, Manager login and saved settings.
 
+## Asset pipeline foundation and sharing — 2026-07-27
+- Added direct WhatsApp sharing beside the QR code. It opens the customer’s WhatsApp app with the private mobile try-on link, selected jewellery type and metal included.
+- Added the protected design-asset queue contract: it records the approved concept image, owner, status and separate private keys for customer GLB, iOS USDZ and staff manufacturing output.
+- The queue refuses generation until the server has a `FAL_KEY`, preventing partial or unsecured 3D requests. The key is documented in `.env.example` and will be supplied later.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.
