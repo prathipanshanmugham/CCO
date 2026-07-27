@@ -39,3 +39,10 @@ class QuoteInput(BaseModel):
 class StatusUpdateInput(BaseModel):
     production_status: str
     internal_note: str | None = None
+
+
+class DesignGuidanceInput(BaseModel):
+    session_id: str = Field(min_length=8, max_length=120)
+    jewellery_type: str = Field(min_length=2, max_length=60)
+    description: str = Field(min_length=12, max_length=1600)
+    specifications: dict[str, Any] = {}

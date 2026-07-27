@@ -1,294 +1,318 @@
-import { useMemo, useState } from "react";
-import {
-  ArrowRight,
-  Check,
-  ImageSquare,
-  Sparkle,
-  UploadSimple,
-} from "@phosphor-icons/react";
-import { toast } from "sonner";
-import { SiteShell } from "../components/SiteShell";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Check, Sparkle } from "@phosphor-icons/react";
+import { ToolShell } from "../components/ToolShell";
 
-const types = [
+const typeLabels = [
   "Ring",
   "Pendant",
   "Bracelet",
   "Earrings",
   "Necklace",
   "Bangle",
-  "Nose Pin",
-  "Anklet",
-  "Brooch",
-  "Cufflinks",
-  "Men's Band",
 ];
-const concepts = [
-  "https://images.unsplash.com/photo-1514612497953-05d1e5e171fa?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1613945407943-59cd755fd69e?auto=format&fit=crop&w=900&q=85",
-  "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=900&q=85",
-];
+const typeExamples = {
+  Ring: [
+    "A slim rose-gold band with a single oval ruby and tiny milgrain detailing along the edges.",
+    "A timeless yellow-gold ring with a round diamond for our tenth anniversary.",
+    "A simple platinum band with our initials hidden inside.",
+    "A floral-inspired ring in white gold with a delicate sapphire centre.",
+  ],
+  Pendant: [
+    "A small yellow-gold pendant inspired by a lotus, with a single diamond at its heart.",
+    "A modern rose-gold initial pendant for my daughter.",
+    "A temple-style pendant with antique finish and ruby accents.",
+    "A simple everyday pendant with an emerald-cut sapphire.",
+  ],
+};
+
+function WelcomeGuide({ onClose }) {
+  return (
+    <div
+      className="guide-overlay"
+      role="dialog"
+      aria-modal="true"
+      data-testid="first-visit-guide"
+    >
+      <div className="guide-card">
+        <p className="eyebrow">Welcome to your private design room</p>
+        <h1>Let’s make something personal.</h1>
+        <div className="guide-steps">
+          {[
+            "Pick a style",
+            "Describe your idea",
+            "We shape your design",
+            "See it in 3D and try it on",
+          ].map((item, index) => (
+            <div key={item}>
+              <span>0{index + 1}</span>
+              <b>{item}</b>
+            </div>
+          ))}
+        </div>
+        <button
+          className="button button--plum"
+          onClick={onClose}
+          data-testid="close-first-visit-guide"
+        >
+          Begin
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function DesignStudioPage() {
+  const search = useMemo(() => new URLSearchParams(window.location.search), []);
+  const initialType = search
+    .get("type")
+    ?.replace(/^./, (letter) => letter.toUpperCase());
   const [step, setStep] = useState(1);
-  const [type, setType] = useState("Ring");
-  const [model, setModel] = useState("gpt-image-1");
-  const [prompt, setPrompt] = useState("");
-  const [selectedConcept, setSelectedConcept] = useState(null);
-  const labels = useMemo(
-    () => ["Choose", "Describe", "Specify", "Concepts"],
-    [],
+  const [type, setType] = useState(
+    typeLabels.includes(initialType) ? initialType : "Ring",
   );
-  const advance = () => {
-    if (step === 2 && prompt.length < 12)
-      return toast.error("Tell us a little more about the piece you imagine.");
-    setStep((current) => Math.min(current + 1, 4));
+  const [description, setDescription] = useState("");
+  const [metal, setMetal] = useState("18K Yellow Gold");
+  const [guideOpen, setGuideOpen] = useState(
+    () => localStorage.getItem("clelia-guide-seen") !== "yes",
+  );
+  const [guidance, setGuidance] = useState("");
+  const [isGuiding, setIsGuiding] = useState(false);
+  const [error, setError] = useState("");
+  const examples = typeExamples[type] || typeExamples.Ring;
+
+  useEffect(() => {
+    if (initialType && typeLabels.includes(initialType)) setType(initialType);
+  }, [initialType]);
+
+  const closeGuide = () => {
+    localStorage.setItem("clelia-guide-seen", "yes");
+    setGuideOpen(false);
   };
+
+  const moveForward = async () => {
+    setError("");
+    if (step === 1) return setStep(2);
+    if (step === 2 && description.trim().length < 12)
+      return setError(
+        "Please add a little more detail so we can understand the piece you have in mind.",
+      );
+    if (step === 3) return setStep(4);
+    if (step === 4) {
+      setIsGuiding(true);
+      setGuidance("");
+      try {
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/api/design-guidance/stream`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              session_id: crypto.randomUUID(),
+              jewellery_type: type,
+              description,
+              specifications: { metal },
+            }),
+          },
+        );
+        if (!response.ok || !response.body) throw new Error("guidance failed");
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          chunk.split("\n\n").forEach((part) => {
+            if (part.startsWith("data: "))
+              setGuidance((current) => current + part.replace("data: ", ""));
+          });
+        }
+        setStep(5);
+      } catch {
+        setError(
+          "We could not shape your design just now. Please try again or adjust your description.",
+        );
+      } finally {
+        setIsGuiding(false);
+      }
+      return;
+    }
+    if (step === 5) return setStep(6);
+    const returnUrl = search.get("return_url");
+    if (returnUrl) window.location.assign(returnUrl);
+  };
+
+  const title = [
+    "Choose the piece you’d love to make.",
+    "Tell us what you have in mind.",
+    "Choose the metal.",
+    "We’re shaping your design.",
+    "See your idea from every angle.",
+    "Your design is ready to confirm.",
+  ][step - 1];
+  const detail = [
+    "Start with the type of jewellery that feels right.",
+    "A memory, a person, an occasion or a visual detail is all we need.",
+    "You can always revisit this before confirming.",
+    "We’re turning your description into a clear design direction.",
+    "The final piece will be prepared by our atelier after your approval.",
+    "We’ll keep these details ready for your private consultation.",
+  ][step - 1];
+
   return (
-    <SiteShell>
-      <section className="studio-page" data-testid="design-studio-page">
-        <div className="studio-heading">
-          <p className="eyebrow">Private Design Studio</p>
-          <h1>Let’s begin with a feeling.</h1>
-          <p data-testid="studio-subheading">
-            A few thoughtful details will guide your first concepts.
-          </p>
-        </div>
-        <ol className="stepper" data-testid="design-studio-progress">
-          {labels.map((label, index) => (
-            <li
-              key={label}
-              className={step >= index + 1 ? "is-active" : ""}
-              data-testid={`studio-step-${index + 1}`}
-            >
-              <span>
-                {step > index + 1 ? <Check size={13} /> : `0${index + 1}`}
-              </span>
-              {label}
-            </li>
-          ))}
-        </ol>
-        <div className="studio-workspace">
-          {step === 1 && (
-            <div className="studio-section" data-testid="choose-type-section">
-              <p className="section-kicker">01 — The starting point</p>
-              <h2>What would you like to create?</h2>
-              <div className="type-grid">
-                {types.map((item, index) => (
-                  <button
-                    key={item}
-                    className={`type-card ${type === item ? "is-selected" : ""}`}
-                    onClick={() => setType(item)}
-                    data-testid={`jewellery-type-${item.toLowerCase().replaceAll(" ", "-")}`}
-                  >
-                    <span className="type-index">0{index + 1}</span>
-                    <span>{item}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {step === 2 && (
-            <div
-              className="studio-section describe-layout"
-              data-testid="describe-design-section"
-            >
-              <div>
-                <p className="section-kicker">02 — The point of view</p>
-                <h2>Describe the piece you see.</h2>
-                <p className="form-hint">
-                  A mood, memory, person or silhouette is a beautiful place to
-                  start.
-                </p>
-                <textarea
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  placeholder="A refined emerald-cut ring inspired by old Bombay cinema, with a delicate milgrain edge…"
-                  data-testid="design-prompt-input"
-                />
-                <div className="prompt-chips">
-                  {[
-                    "Art Deco",
-                    "Minimal",
-                    "Temple",
-                    "Floral",
-                    "For an anniversary",
-                  ].map((chip) => (
-                    <button
-                      key={chip}
-                      onClick={() =>
-                        setPrompt((current) => `${current} ${chip}`.trim())
-                      }
-                      data-testid={`prompt-chip-${chip.toLowerCase().replaceAll(" ", "-")}`}
-                    >
-                      {chip}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <label
-                className="upload-panel"
-                data-testid="reference-upload-panel"
+    <ToolShell step={step} onHelp={() => setGuideOpen(true)}>
+      {guideOpen && <WelcomeGuide onClose={closeGuide} />}
+      <section className="focused-step" data-testid={`designer-step-${step}`}>
+        <p className="eyebrow">Your bespoke piece</p>
+        <h1>{title}</h1>
+        <p className="step-detail">{detail}</p>
+        {step === 1 && (
+          <div className="type-grid focused-grid">
+            {typeLabels.map((item) => (
+              <button
+                className={`type-card ${type === item ? "is-selected" : ""}`}
+                key={item}
+                onClick={() => setType(item)}
+                data-testid={`designer-type-${item.toLowerCase()}`}
               >
-                <UploadSimple size={29} weight="thin" />
-                <strong>Reference images</strong>
-                <span>Sketches, inspiration, or a treasured heirloom</span>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  data-testid="reference-image-input"
-                />
-                <small>Up to 5 images</small>
-              </label>
-            </div>
-          )}
-          {step === 3 && (
-            <div
-              className="studio-section"
-              data-testid="specify-design-section"
-            >
-              <p className="section-kicker">03 — The particulars</p>
-              <h2>Give form to the details.</h2>
-              <div className="spec-grid">
-                <label>
-                  Metal
-                  <select data-testid="metal-select">
-                    <option>18K Yellow Gold</option>
-                    <option>18K Rose Gold</option>
-                    <option>Platinum</option>
-                    <option>925 Silver</option>
-                  </select>
-                </label>
-                <label>
-                  Primary stone
-                  <select data-testid="stone-select">
-                    <option>Diamond</option>
-                    <option>Emerald</option>
-                    <option>Ruby</option>
-                    <option>None</option>
-                  </select>
-                </label>
-                <label>
-                  Size / length
-                  <input placeholder="Ring size 12" data-testid="size-input" />
-                </label>
-                <label>
-                  Engraving
-                  <input
-                    placeholder="Forever, A."
-                    maxLength="24"
-                    data-testid="engraving-input"
-                  />
-                </label>
-              </div>
-              <div className="model-selector">
-                <p>Concept model</p>
-                {[
-                  ["gpt-image-1", "GPT Image 1", "Detailed, editorial renders"],
-                  [
-                    "gemini-nano-banana",
-                    "Gemini Nano Banana",
-                    "Expressive, rapid variations",
-                  ],
-                ].map(([id, title, note]) => (
-                  <button
-                    key={id}
-                    onClick={() => setModel(id)}
-                    className={model === id ? "is-selected" : ""}
-                    data-testid={`ai-model-${id}`}
-                  >
-                    <span>{model === id && <Check size={14} />}</span>
-                    <strong>{title}</strong>
-                    <small>{note}</small>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {step === 4 && (
-            <div
-              className="studio-section"
-              data-testid="concepts-gallery-section"
-            >
-              <p className="section-kicker">04 — Your first concepts</p>
-              <h2>Three interpretations, one story.</h2>
-              <p className="form-hint">
-                Choose a favourite to refine, view in 3D, or request a private
-                quote.
-              </p>
-              <div className="concept-grid">
-                {concepts.map((image, index) => (
-                  <button
-                    key={image}
-                    className={`concept-card ${selectedConcept === index ? "is-selected" : ""}`}
-                    onClick={() => setSelectedConcept(index)}
-                    data-testid={`concept-select-${index + 1}`}
-                  >
-                    <img src={image} alt={`Design concept ${index + 1}`} />
-                    <span>
-                      0{index + 1} —{" "}
-                      {
-                        ["The Heirloom", "The Modern Muse", "The Signature"][
-                          index
-                        ]
-                      }
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {selectedConcept !== null && (
-                <div className="concept-actions">
-                  <button
-                    className="button button--outline"
-                    onClick={() => toast("The 3D preview is being prepared.")}
-                    data-testid="view-3d-button"
-                  >
-                    <ImageSquare size={18} /> View in 3D
-                  </button>
-                  <button
-                    className="button button--plum"
-                    onClick={() =>
-                      toast.success(
-                        "Your private quote request has been saved.",
-                      )
-                    }
-                    data-testid="request-quote-button"
-                  >
-                    Request a private quote <ArrowRight size={17} />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        {step < 4 && (
-          <div className="studio-footer">
-            <button
-              className="text-button"
-              onClick={() => setStep((current) => Math.max(1, current - 1))}
-              disabled={step === 1}
-              data-testid="studio-back-button"
-            >
-              Back
-            </button>
-            <button
-              className="button button--plum"
-              onClick={advance}
-              data-testid="studio-continue-button"
-            >
-              {step === 3 ? (
-                <>
-                  <Sparkle size={17} /> Generate concepts
-                </>
-              ) : (
-                <>
-                  Continue <ArrowRight size={17} />
-                </>
-              )}
-            </button>
+                <span>{type === item && <Check size={15} />}</span>
+                {item}
+              </button>
+            ))}
           </div>
         )}
+        {step === 2 && (
+          <div className="description-step">
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="For example, a delicate ring that reminds me of…"
+              data-testid="idea-description-input"
+            />
+            <p className="field-label">Need a starting point?</p>
+            <div className="example-prompts">
+              {examples.map((example, index) => (
+                <button
+                  key={example}
+                  onClick={() => setDescription(example)}
+                  data-testid={`example-idea-${index + 1}`}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {step === 3 && (
+          <div className="metal-options" data-testid="metal-options">
+            {[
+              "18K Yellow Gold",
+              "18K Rose Gold",
+              "18K White Gold",
+              "Platinum",
+              "925 Silver",
+            ].map((item) => (
+              <button
+                key={item}
+                className={metal === item ? "is-selected" : ""}
+                onClick={() => setMetal(item)}
+                data-testid={`metal-option-${item.toLowerCase().replaceAll(" ", "-")}`}
+              >
+                {metal === item && <Check size={15} />}
+                {item}
+              </button>
+            ))}
+          </div>
+        )}
+        {step === 4 && (
+          <div className="creation-state" data-testid="creation-progress">
+            <span className="creation-ring">
+              <Sparkle size={26} />
+            </span>
+            <p>
+              {isGuiding
+                ? "Reading the details you’ve shared…"
+                : "Ready when you are."}
+            </p>
+            <small>
+              {isGuiding
+                ? "Usually less than a minute"
+                : "We’ll make a clear design direction for you."}
+            </small>
+          </div>
+        )}
+        {step === 5 && (
+          <div className="design-review" data-testid="design-guidance-result">
+            <div className="review-jewel">
+              <span>{type}</span>
+            </div>
+            <div>
+              <p className="eyebrow">Your design direction</p>
+              <p className="guidance-copy">
+                {guidance ||
+                  "Your design direction is ready for the next stage."}
+              </p>
+              <button
+                className="text-button"
+                onClick={() => setStep(2)}
+                data-testid="adjust-description-button"
+              >
+                Adjust the description
+              </button>
+            </div>
+          </div>
+        )}
+        {step === 6 && (
+          <div className="confirmation-card" data-testid="design-confirmation">
+            <p className="eyebrow">Private design summary</p>
+            <dl>
+              <div>
+                <dt>Piece</dt>
+                <dd>{type}</dd>
+              </div>
+              <div>
+                <dt>Metal</dt>
+                <dd>{metal}</dd>
+              </div>
+              <div>
+                <dt>Your idea</dt>
+                <dd>{description}</dd>
+              </div>
+            </dl>
+            <p>
+              When you confirm, your private design will be saved and our team
+              can prepare your next step.
+            </p>
+          </div>
+        )}
+        {error && (
+          <p className="inline-error" data-testid="designer-error-message">
+            {error}
+          </p>
+        )}
+        <div className="focused-actions">
+          <button
+            className="text-button"
+            onClick={() => setStep((current) => Math.max(1, current - 1))}
+            disabled={step === 1 || isGuiding}
+            data-testid="designer-back-button"
+          >
+            Back
+          </button>
+          <button
+            className="button button--plum"
+            onClick={moveForward}
+            disabled={isGuiding}
+            data-testid="designer-primary-button"
+          >
+            {step === 6
+              ? "Confirm my design"
+              : step === 4
+                ? "Create my design"
+                : "Continue"}
+            <ArrowRight size={17} />
+          </button>
+        </div>
       </section>
-    </SiteShell>
+    </ToolShell>
   );
 }

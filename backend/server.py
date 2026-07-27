@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -6,9 +7,11 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorClient
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
 
 from app.auth import create_access_token, hash_password, read_token, request_ip, require_roles, verify_password
-from app.schemas import DesignInput, LoginInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
+from app.chat_service import stream_design_guidance
+from app.schemas import DesignGuidanceInput, DesignInput, LoginInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
 from app.services import build_concepts, clean_document, new_id, utc_now
 
 
@@ -18,6 +21,7 @@ client = AsyncIOMotorClient(os.environ["MONGO_URL"])
 db = client[os.environ["DB_NAME"]]
 app = FastAPI(title="Clelia & Co. Design Studio")
 api_router = APIRouter(prefix="/api")
+logger = logging.getLogger(__name__)
 
 
 async def audit(actor_id: str, action: str, entity_type: str, entity_id: str, ip: str, metadata: dict | None = None) -> None:
@@ -27,6 +31,24 @@ async def audit(actor_id: str, action: str, entity_type: str, entity_id: str, ip
 @api_router.get("/health")
 async def health():
     return {"status": "healthy", "service": "clelia-design-studio"}
+
+
+@api_router.post("/design-guidance/stream")
+async def design_guidance(payload: DesignGuidanceInput, request: Request):
+    async def event_stream():
+        await db.design_guidance_messages.insert_one({"id": new_id(), "session_id": payload.session_id, "role": "customer", "jewellery_type": payload.jewellery_type, "body": payload.description, "specifications": payload.specifications, "created_at": utc_now()})
+        response_parts: list[str] = []
+        try:
+            async for token in stream_design_guidance(payload.session_id, payload.jewellery_type, payload.description, payload.specifications):
+                response_parts.append(token)
+                yield f"data: {token}\n\n"
+            await db.design_guidance_messages.insert_one({"id": new_id(), "session_id": payload.session_id, "role": "guide", "jewellery_type": payload.jewellery_type, "body": "".join(response_parts), "created_at": utc_now()})
+            yield "event: done\ndata: complete\n\n"
+        except Exception:
+            logger.exception("Design guidance provider request failed")
+            yield "event: error\ndata: We could not shape your idea just now. Please try again or adjust your description.\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @api_router.post("/auth/register")
