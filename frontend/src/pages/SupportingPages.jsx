@@ -301,37 +301,3 @@ export function LoginPage({ staff = false, signup = false }) {
   );
 }
 
-export function ProfilePage() {
-  return (
-    <SiteShell>
-      <section className="profile-page" data-testid="profile-page">
-        <p className="eyebrow">Personal details</p>
-        <h1>Your profile</h1>
-        <div className="profile-grid">
-          <div className="profile-avatar">
-            <UserCircle size={72} weight="thin" />
-          </div>
-          <form>
-            <label>
-              Full name
-              <input placeholder="Your name" data-testid="profile-name-input" />
-            </label>
-            <label>
-              Email address
-              <input
-                placeholder="you@example.com"
-                data-testid="profile-email-input"
-              />
-            </label>
-            <button
-              className="button button--plum"
-              data-testid="save-profile-button"
-            >
-              Save changes
-            </button>
-          </form>
-        </div>
-      </section>
-    </SiteShell>
-  );
-}

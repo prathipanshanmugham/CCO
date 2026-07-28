@@ -143,7 +143,7 @@ async def me(token: dict = Depends(read_token)):
 async def update_profile(payload: ProfileUpdateInput, request: Request, token: dict = Depends(read_token)):
     if token["role"] != "customer":
         raise HTTPException(status_code=403, detail="Only customer accounts can update this profile")
-    await db.users.update_one({"id": token["sub"]}, {"$set": payload.model_dump()})
+    await db.users.update_one({"id": token["sub"]}, {"$set": payload.model_dump(exclude_none=True)})
     user = await db.users.find_one({"id": token["sub"]}, {"_id": 0})
     await audit(token["sub"], "customer_profile_updated", "user", token["sub"], request_ip(request))
     return clean_document(user)

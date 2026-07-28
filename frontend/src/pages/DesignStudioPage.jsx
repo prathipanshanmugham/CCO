@@ -179,7 +179,10 @@ export default function DesignStudioPage() {
       localStorage.setItem("clelia-last-design-id", data.id);
       setSuccess("Your design has been saved to your Design Vault.");
       const returnUrl = search.get("return_url");
-      if (returnUrl) window.location.assign(returnUrl);
+      if (returnUrl) {
+        const target = new URL(returnUrl, window.location.origin);
+        if (target.hostname === "cleliaandco.com" || target.hostname === "www.cleliaandco.com") window.location.assign(target.toString());
+      }
       return;
     } catch (saveError) {
       console.error("Design save failed", saveError);

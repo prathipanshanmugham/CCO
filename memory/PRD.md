@@ -73,6 +73,13 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Added responsive populated order cards with clear status, friendly order identifier, due date, amount and detail action.
 - QA confirmed all reported Orders acceptance criteria at 390px and 1920px: one empty state, correct icon treatment, sticky header/menu, responsive cards and zero overflow.
 
+## Customer flow repair — 2026-07-28
+- Root cause: `/profile` had no registered route and the old profile form was display-only; replaced with a persisted customer profile screen backed by authenticated `GET /api/auth/me` and `PATCH /api/profile`.
+- Root cause: the final Design Studio confirmation never invoked the saved-design endpoint; it now creates the authenticated customer design, stores its ID locally and gives distinct success/error feedback.
+- Added Indian 10-digit mobile validation, controlled signup name persistence, safer approved-store return redirects, and complete browser CORS methods for profile and Manager operations.
+- QA evidence: 12/12 backend tests and 6/6 focused browser checks passed. Customer profile updates persist through logout/login; authenticated design save returns 200 and customer role remains blocked from staff/print-file APIs.
+- Known external-service limitations: Razorpay checkout/webhook, Google OAuth, phone OTP, password reset/email verification, true AR device camera and provider-based 3D asset generation remain unavailable until their corresponding service credentials/providers are configured.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.
