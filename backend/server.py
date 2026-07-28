@@ -48,6 +48,13 @@ async def ensure_manager_account():
     for name, email, password, role in accounts:
         if not await db.users.find_one({"email": email.lower()}, {"_id": 0}):
             await db.users.insert_one({"id": new_id(), "name": name, "email": email.lower(), "role": role, "password_hash": hash_password(password), "totp_secret": os.environ["MANAGER_TOTP_SECRET"] if role == "manager" else os.environ["STAFF_TOTP_SECRET"], "status": "active", "created_at": utc_now()})
+    if not await db.orders.find_one({"sample_data": True}, {"_id": 0}):
+        customer_id = new_id()
+        await db.users.insert_one({"id": customer_id, "name": "Aarohi Shah", "email": "aarohi@cleliastudio-demo.com", "role": "customer", "password_hash": hash_password("Customer!2026Studio"), "status": "active", "created_at": utc_now()})
+        for index, stage in enumerate(["New", "In Production", "QC"]):
+            design_id = new_id()
+            await db.designs.insert_one({"id": design_id, "customer_id": customer_id, "jewellery_type": ["Ring", "Pendant", "Bracelet"][index], "prompt": "Sample atelier commission", "specs": {"metal": "18K Yellow Gold"}, "version": 1, "status": "approved", "created_at": utc_now()})
+            await db.orders.insert_one({"id": new_id(), "sample_data": True, "design_id": design_id, "customer_id": customer_id, "total": [184000, 94500, 276000][index], "currency": "INR", "payment_status": "confirmed", "production_status": stage, "due_date": ["2026-07-15", "2026-07-22", "2026-07-29"][index], "created_at": utc_now(), "timeline": [{"label": stage, "at": utc_now()}]})
 
 
 @api_router.get("/health")

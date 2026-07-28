@@ -7,38 +7,26 @@ import {
   SignOut,
   UsersThree,
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const orders = [
-  {
-    id: "CC-2481",
-    client: "Ananya Mehta",
-    piece: "Emerald Signet Ring",
-    value: "₹1,84,000",
-    state: "New",
-    due: "18 Jun",
-  },
-  {
-    id: "CC-2474",
-    client: "Rohan Bhatia",
-    piece: "Diamond Tennis Bracelet",
-    value: "₹2,76,000",
-    state: "In Production",
-    due: "12 Jun",
-  },
-  {
-    id: "CC-2468",
-    client: "Mira Kapoor",
-    piece: "Temple Pendant",
-    value: "₹94,500",
-    state: "QC",
-    due: "09 Jun",
-  },
-];
 
 export default function StaffDashboardPage() {
   const [active, setActive] = useState("Order Queue");
+  const [orders, setOrders] = useState(null);
+  const [error, setError] = useState("");
+  const token = localStorage.getItem("clelia-staff-token");
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/staff/orders`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then(setOrders)
+      .catch(() =>
+        setError(
+          "Please sign in with a staff account to view the order queue.",
+        ),
+      );
+  }, [token]);
   const nav = [
     [ListChecks, "Order Queue"],
     [Cube, "Production Tracker"],
@@ -85,82 +73,104 @@ export default function StaffDashboardPage() {
             AM
           </button>
         </header>
-        <section className="staff-metrics" data-testid="staff-metrics">
-          <div>
-            <span>Open orders</span>
-            <strong>24</strong>
-            <small>8 due this week</small>
-          </div>
-          <div>
-            <span>In production</span>
-            <strong>16</strong>
-            <small>+3 from last week</small>
-          </div>
-          <div>
-            <span>Awaiting QC</span>
-            <strong>05</strong>
-            <small>2 priority</small>
-          </div>
-          <div>
-            <span>Value in pipeline</span>
-            <strong>₹18.4L</strong>
-            <small>Across all active orders</small>
-          </div>
-        </section>
-        <section className="orders-panel">
-          <div className="panel-heading">
-            <div>
-              <h2>Active commissions</h2>
-              <p data-testid="orders-panel-description">
-                Refined work, moving through the atelier.
-              </p>
-            </div>
-            <button
-              className="button button--outline"
-              data-testid="order-filter-button"
-            >
-              Filter orders
-            </button>
-          </div>
-          <div className="orders-table" data-testid="staff-orders-table">
-            <div className="table-row table-head">
-              <span>Commission</span>
-              <span>Piece</span>
-              <span>Stage</span>
-              <span>Due</span>
-              <span />
-            </div>
-            {orders.map((order) => (
-              <div
-                className="table-row"
-                key={order.id}
-                data-testid={`staff-order-${order.id.toLowerCase()}`}
-              >
-                <span>
-                  <strong>{order.id}</strong>
-                  <small>{order.client}</small>
-                </span>
-                <span>
-                  {order.piece}
-                  <small>{order.value}</small>
-                </span>
-                <span>
-                  <i
-                    className={`status-dot status-${order.state.toLowerCase().replaceAll(" ", "-")}`}
-                  />
-                  {order.state}
-                </span>
-                <span>{order.due}</span>
+        {error ? (
+          <p className="inline-error" data-testid="staff-dashboard-error">
+            {error}
+          </p>
+        ) : (
+          <>
+            <section className="staff-metrics" data-testid="staff-metrics">
+              <div>
+                <span>Open orders</span>
+                <strong>{orders?.length ?? "—"}</strong>
+                <small>Current commissions</small>
+              </div>
+              <div>
+                <span>In production</span>
+                <strong>
+                  {orders?.filter(
+                    (order) => order.production_status === "In Production",
+                  ).length ?? "—"}
+                </strong>
+                <small>In active production</small>
+              </div>
+              <div>
+                <span>Awaiting QC</span>
+                <strong>
+                  {orders?.filter((order) => order.production_status === "QC")
+                    .length ?? "—"}
+                </strong>
+                <small>Awaiting final review</small>
+              </div>
+              <div>
+                <span>Value in pipeline</span>
+                <strong>
+                  ₹
+                  {orders
+                    ?.reduce((sum, order) => sum + (order.total || 0), 0)
+                    .toLocaleString("en-IN") ?? "—"}
+                </strong>
+                <small>Across active orders</small>
+              </div>
+            </section>
+            <section className="orders-panel">
+              <div className="panel-heading">
+                <div>
+                  <h2>Active commissions</h2>
+                  <p data-testid="orders-panel-description">
+                    Refined work, moving through the atelier.
+                  </p>
+                </div>
                 <button
-                  className="table-action"
-                  data-testid={`open-order-${order.id.toLowerCase()}`}
+                  className="button button--outline"
+                  data-testid="order-filter-button"
                 >
-                  Open
+                  Filter orders
                 </button>
               </div>
-            ))}
-          </div>
-        </section>
+              <div className="orders-table" data-testid="staff-orders-table">
+                <div className="table-row table-head">
+                  <span>Commission</span>
+                  <span>Piece</span>
+                  <span>Stage</span>
+                  <span>Due</span>
+                  <span />
+                </div>
+                {orders?.map((order) => (
+                  <div
+                    className="table-row"
+                    key={order.id}
+                    data-testid={`staff-order-${order.id.toLowerCase()}`}
+                  >
+                    <span>
+                      <strong>{order.id}</strong>
+                      <small>{order.customer_id}</small>
+                    </span>
+                    <span>
+                      {order.design_id}
+                      <small>
+                        ₹{(order.total || 0).toLocaleString("en-IN")}
+                      </small>
+                    </span>
+                    <span>
+                      <i
+                        className={`status-dot status-${order.production_status.toLowerCase().replaceAll(" ", "-")}`}
+                      />
+                      {order.production_status}
+                    </span>
+                    <span>{order.due_date || "Not set"}</span>
+                    <button
+                      className="table-action"
+                      data-testid={`open-order-${order.id.toLowerCase()}`}
+                    >
+                      Open
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
         <section
           className="secure-panel"
           data-testid="secure-print-files-panel"
