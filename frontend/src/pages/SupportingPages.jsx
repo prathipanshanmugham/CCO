@@ -143,6 +143,7 @@ export function LoginPage({ staff = false, signup = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -157,7 +158,7 @@ export function LoginPage({ staff = false, signup = false }) {
     const body = staff
       ? { email, password, otp }
       : signup
-        ? { name: "Clelia Customer", email, password }
+        ? { name, email, password }
         : { email, password };
     const response = await fetch(
       `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
@@ -224,6 +225,8 @@ export function LoginPage({ staff = false, signup = false }) {
               Full name
               <input
                 placeholder="Your name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
                 data-testid="customer-name-input"
               />
             </label>

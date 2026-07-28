@@ -13,7 +13,7 @@ from app.auth import create_access_token, hash_password, read_token, request_ip,
 from app.asset_jobs import asset_pipeline_ready, build_asset_job
 from app.chat_service import stream_design_guidance
 from app.payments import create_gateway_order, payment_ready, verify_webhook
-from app.schemas import AssetGenerationInput, ContentSettingsUpdate, DesignGuidanceInput, DesignInput, LoginInput, PaymentStartInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
+from app.schemas import AssetGenerationInput, ContentSettingsUpdate, DesignGuidanceInput, DesignInput, LoginInput, PaymentStartInput, ProfileUpdateInput, QuoteInput, RegisterInput, StaffVerifyInput, StatusUpdateInput
 from app.services import build_concepts, clean_document, new_id, utc_now
 
 
@@ -139,6 +139,16 @@ async def me(token: dict = Depends(read_token)):
     return clean_document(user)
 
 
+@api_router.patch("/profile")
+async def update_profile(payload: ProfileUpdateInput, request: Request, token: dict = Depends(read_token)):
+    if token["role"] != "customer":
+        raise HTTPException(status_code=403, detail="Only customer accounts can update this profile")
+    await db.users.update_one({"id": token["sub"]}, {"$set": payload.model_dump()})
+    user = await db.users.find_one({"id": token["sub"]}, {"_id": 0})
+    await audit(token["sub"], "customer_profile_updated", "user", token["sub"], request_ip(request))
+    return clean_document(user)
+
+
 @api_router.post("/designs")
 async def create_design(payload: DesignInput, request: Request, token: dict = Depends(read_token)):
     if token["role"] != "customer":
@@ -260,7 +270,7 @@ async def audit_logs(token: dict = Depends(require_roles("manager"))):
 
 
 app.include_router(api_router)
-app.add_middleware(CORSMiddleware, allow_credentials=False, allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","), allow_methods=["GET", "POST", "PATCH"], allow_headers=["Authorization", "Content-Type"])
+app.add_middleware(CORSMiddleware, allow_credentials=False, allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","), allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"], allow_headers=["Authorization", "Content-Type"])
 
 
 @app.on_event("shutdown")

@@ -61,6 +61,7 @@ export default function DesignStudioPage() {
   const [guidance, setGuidance] = useState("");
   const [isGuiding, setIsGuiding] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [sessionId] = useState(() => crypto.randomUUID());
   const [tryOnOpen, setTryOnOpen] = useState(false);
   const typeLabels =
@@ -97,6 +98,7 @@ export default function DesignStudioPage() {
 
   const moveForward = async () => {
     setError("");
+    setSuccess("");
     if (step === 1) return setStep(2);
     if (step === 2) {
       if (description.trim().length < 12) {
@@ -175,15 +177,16 @@ export default function DesignStudioPage() {
       if (!response.ok)
         throw new Error(data.detail || "We could not save your design.");
       localStorage.setItem("clelia-last-design-id", data.id);
-      setError("Your design has been saved to your Design Vault.");
+      setSuccess("Your design has been saved to your Design Vault.");
+      const returnUrl = search.get("return_url");
+      if (returnUrl) window.location.assign(returnUrl);
+      return;
     } catch (saveError) {
       console.error("Design save failed", saveError);
       setError(
         saveError.message || "We could not save your design. Please try again.",
       );
     }
-    const returnUrl = search.get("return_url");
-    if (returnUrl) window.location.assign(returnUrl);
   };
 
   const title = [
@@ -343,6 +346,14 @@ export default function DesignStudioPage() {
             {error && (
               <p className="inline-error" data-testid="designer-error-message">
                 {error}
+              </p>
+            )}
+            {success && (
+              <p
+                className="design-success"
+                data-testid="designer-success-message"
+              >
+                {success}
               </p>
             )}
             <div className="focused-actions">

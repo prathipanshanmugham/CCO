@@ -15,6 +15,11 @@ class LoginInput(BaseModel):
     password: str
 
 
+class ProfileUpdateInput(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    phone: str | None = Field(default=None, pattern=r"^[6-9]\d{9}$")
+
+
 class StaffVerifyInput(BaseModel):
     email: EmailStr
     password: str
