@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, CreditCard, Package } from "@phosphor-icons/react";
 import { Link } from "react-router-dom";
+import { CustomerAppHeader } from "../components/CustomerAppHeader";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -44,91 +45,105 @@ export default function CustomerOrdersPage() {
 
   if (error)
     return (
-      <main className="orders-application" data-testid="customer-orders-page">
-        <section className="orders-empty">
-          <Package size={36} />
-          <h2>Keep every commission close.</h2>
-          <p>{error}</p>
-          <Link
-            to="/login"
-            className="button button--plum"
-            data-testid="orders-sign-in-link"
-          >
-            Sign in to view orders
-          </Link>
-        </section>
-        <p className="inline-error" data-testid="orders-error-message">
-          {error}
-        </p>
-      </main>
+      <>
+        <CustomerAppHeader />
+        <main className="orders-application" data-testid="customer-orders-page">
+          <section className="orders-empty">
+            <Package size={36} />
+            <h2>Keep every commission close.</h2>
+            <p>{error}</p>
+            <Link
+              to="/login"
+              className="button button--plum"
+              data-testid="orders-sign-in-link"
+            >
+              Sign in to view orders
+            </Link>
+          </section>
+          <p className="inline-error" data-testid="orders-error-message">
+            {error}
+          </p>
+        </main>
+      </>
     );
   if (!orders)
     return (
-      <main className="orders-application" data-testid="customer-orders-page">
-        <p data-testid="orders-loading-state">Loading your orders…</p>
-      </main>
+      <>
+        <CustomerAppHeader />
+        <main className="orders-application" data-testid="customer-orders-page">
+          <p data-testid="orders-loading-state">Loading your orders…</p>
+        </main>
+      </>
     );
   return (
-    <main className="orders-application" data-testid="customer-orders-page">
-      <header>
-        <Link to="/" data-testid="orders-back-to-studio-link">
-          <ArrowLeft size={17} /> Back to designer
-        </Link>
-        <h1>My Orders</h1>
-      </header>
-      {orders.length === 0 ? (
-        <section className="orders-empty" data-testid="orders-empty-state">
-          <Package size={36} />
-          <h2>Your story starts here.</h2>
-          <p>Once you confirm a design, its progress will appear here.</p>
-          <Link
-            className="button button--plum"
-            to="/"
-            data-testid="orders-create-design-link"
-          >
-            Create a design
-          </Link>
-        </section>
-      ) : (
-        <section
-          className="customer-order-list"
-          data-testid="customer-orders-list"
-        >
-          {orders.map((order) => (
-            <article key={order.id} data-testid={`customer-order-${order.id}`}>
-              <div>
-                <p className="eyebrow">{order.production_status}</p>
-                <h2>{order.design_id}</h2>
-                <p>
-                  Payment:{" "}
-                  {(order.payment_status || "pending").replaceAll("_", " ")}
+    <>
+      <CustomerAppHeader />
+      <main className="orders-application" data-testid="customer-orders-page">
+        <div className="orders-container">
+          <header>
+            <h1>My Orders</h1>
+          </header>
+          {orders.length === 0 ? (
+            <section className="orders-empty" data-testid="orders-empty-state">
+              <div className="orders-empty-icon">
+                <Package size={48} />
+              </div>
+              <h2>Your story starts here.</h2>
+              <p>Once you confirm a design, its progress will appear here.</p>
+              <Link
+                className="button button--plum"
+                to="/"
+                data-testid="orders-create-design-link"
+              >
+                Create a design
+              </Link>
+            </section>
+          ) : (
+            <section
+              className="customer-order-list"
+              data-testid="customer-orders-list"
+            >
+              {orders.map((order) => (
+                <article
+                  className="customer-order-card"
+                  key={order.id}
+                  data-testid={`customer-order-${order.id}`}
+                >
+                  <div>
+                    <p className="eyebrow">{order.production_status}</p>
+                    <h2>{order.design_id}</h2>
+                    <p>
+                      Payment:{" "}
+                      {(order.payment_status || "pending").replaceAll("_", " ")}
+                    </p>
+                  </div>
+                  <div>
+                    <strong>
+                      {order.total
+                        ? `₹${order.total.toLocaleString("en-IN")}`
+                        : "Quote in progress"}
+                    </strong>
+                    {order.payment_status !== "confirmed" && order.total ? (
+                      <button
+                        className="button button--plum"
+                        onClick={() => startPayment(order.id)}
+                        data-testid={`pay-order-${order.id}`}
+                      >
+                        <CreditCard size={17} /> Pay securely
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+              {paymentMessage && (
+                <p className="inline-error" data-testid="payment-message">
+                  {paymentMessage}
                 </p>
-              </div>
-              <div>
-                <strong>
-                  {order.total
-                    ? `₹${order.total.toLocaleString("en-IN")}`
-                    : "Quote in progress"}
-                </strong>
-                {order.payment_status !== "confirmed" && order.total ? (
-                  <button
-                    className="button button--plum"
-                    onClick={() => startPayment(order.id)}
-                    data-testid={`pay-order-${order.id}`}
-                  >
-                    <CreditCard size={17} /> Pay securely
-                  </button>
-                ) : null}
-              </div>
-            </article>
-          ))}
-          {paymentMessage && (
-            <p className="inline-error" data-testid="payment-message">
-              {paymentMessage}
-            </p>
+              )}
+            </section>
           )}
-        </section>
-      )}
-    </main>
+        </div>
+      </main>
+    </>
   );
 }

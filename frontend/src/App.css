@@ -1767,3 +1767,210 @@ h2 {
   margin-top: 1rem;
   color: var(--clelia-plum);
 }
+
+.customer-app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 60px;
+  background: var(--clelia-ivory);
+  border-bottom: 1px solid rgba(196, 178, 161, 0.3);
+}
+.customer-app-container,
+.orders-container {
+  width: min(100% - 48px, 1100px);
+  margin: 0 auto;
+}
+.customer-app-container {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.customer-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--clelia-plum);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+.customer-avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--clelia-champagne);
+  border-radius: 50%;
+  background: white;
+  color: var(--clelia-plum);
+  font-size: 13px;
+}
+.customer-account-wrap {
+  position: relative;
+}
+.customer-account-menu {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  z-index: 40;
+  display: grid;
+  min-width: 240px;
+  padding: 14px;
+  border: 1px solid var(--clelia-champagne);
+  background: white;
+  box-shadow: 0 12px 32px rgba(28, 28, 28, 0.12);
+  gap: 11px;
+  font-size: 14px;
+}
+.customer-account-menu span,
+.account-muted {
+  color: #777;
+  font-size: 13px;
+}
+.customer-account-menu hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(196, 178, 161, 0.5);
+}
+.customer-account-menu button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--clelia-plum);
+  text-align: left;
+}
+.orders-application {
+  min-height: calc(100vh - 60px);
+  padding: 40px 0;
+}
+.orders-application h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.2;
+}
+.orders-empty {
+  min-height: calc(100vh - 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 440px;
+  margin: 0 auto;
+  text-align: center;
+}
+.orders-empty-icon {
+  display: grid;
+  width: 96px;
+  height: 96px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(196, 178, 161, 0.22);
+  color: var(--clelia-plum);
+}
+.orders-empty h2 {
+  margin: 20px 0 8px;
+  color: var(--clelia-plum);
+  font-size: 24px;
+  line-height: 1.2;
+}
+.orders-empty p {
+  margin-bottom: 24px;
+  color: #666;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.orders-empty .button {
+  padding: 14px 32px;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+.customer-order-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.customer-order-card {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid rgba(196, 178, 161, 0.7);
+  background: white;
+}
+.order-thumbnail {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  background: var(--clelia-mist);
+  color: var(--clelia-plum);
+}
+.customer-order-card h2 {
+  margin: 8px 0 4px;
+  font-size: 20px;
+}
+.customer-order-card p {
+  margin: 0;
+  color: #666;
+  font-size: 15px;
+}
+.customer-order-card > div:last-child {
+  display: grid;
+  justify-items: end;
+  gap: 9px;
+}
+.order-status {
+  padding: 4px 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #eee;
+  color: #555;
+}
+.status-in-production {
+  background: #660033;
+  color: white;
+}
+.status-shipped {
+  background: #4793af;
+  color: white;
+}
+.status-delivered {
+  background: #ddd8d3;
+  color: #555;
+}
+@media (min-width: 768px) {
+  .customer-app-container,
+  .orders-container {
+    width: min(100% - 96px, 1100px);
+  }
+}
+@media (max-width: 899px) {
+  .customer-order-list {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 479px) {
+  .customer-back-link span {
+    display: none;
+  }
+  .customer-account-menu {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    top: auto;
+    min-width: 0;
+    padding: 24px;
+    border: 0;
+    border-top: 1px solid var(--clelia-champagne);
+  }
+  .customer-order-card {
+    grid-template-columns: 56px 1fr;
+  }
+  .customer-order-card > div:last-child {
+    grid-column: 2;
+    justify-items: start;
+  }
+}
