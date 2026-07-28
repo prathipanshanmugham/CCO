@@ -49,8 +49,10 @@ export default function CustomerOrdersPage() {
         <CustomerAppHeader />
         <main className="orders-application" data-testid="customer-orders-page">
           <section className="orders-empty">
-            <Package size={36} />
-            <h2>Keep every commission close.</h2>
+            <div className="orders-empty-icon">
+              <Package size={48} />
+            </div>
+            <h2>Your story starts here.</h2>
             <p>{error}</p>
             <Link
               to="/login"
@@ -60,9 +62,6 @@ export default function CustomerOrdersPage() {
               Sign in to view orders
             </Link>
           </section>
-          <p className="inline-error" data-testid="orders-error-message">
-            {error}
-          </p>
         </main>
       </>
     );
@@ -111,10 +110,17 @@ export default function CustomerOrdersPage() {
                 >
                   <div>
                     <p className="eyebrow">{order.production_status}</p>
-                    <h2>{order.design_id}</h2>
+                    <h2>
+                      Bespoke piece {String(order.id).slice(0, 8).toUpperCase()}
+                    </h2>
                     <p>
                       Payment:{" "}
                       {(order.payment_status || "pending").replaceAll("_", " ")}
+                    </p>
+                    <p>
+                      Due{" "}
+                      {order.due_date ||
+                        new Date(order.created_at).toLocaleDateString("en-IN")}
                     </p>
                   </div>
                   <div>
@@ -132,6 +138,13 @@ export default function CustomerOrdersPage() {
                         <CreditCard size={17} /> Pay securely
                       </button>
                     ) : null}
+                    <Link
+                      className="underlined-link"
+                      to={`/orders/${order.id}`}
+                      data-testid={`view-order-${order.id}`}
+                    >
+                      View details
+                    </Link>
                   </div>
                 </article>
               ))}

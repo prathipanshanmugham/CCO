@@ -1,0 +1,29 @@
+{
+  "summary": "Retest of /orders layout after iteration_6 fixes. Ran Playwright at 390 and 1920 in both signed-out and signed-in (aarohi@cleliastudio-demo.com) states. All 5 acceptance criteria PASS. Signed-out empty state now renders exactly ONE .orders-empty section (0 duplicate orders-error-message elements), with the 96px champagne circle (getComputedStyle: 96x96, borderRadius 50%, bg rgba(196,178,161,0.22)) wrapping a 48x48 Package SVG and heading 'Your story starts here.'. Populated cards now show short friendly heading (e.g. 'Bespoke piece 51086C4E' - no raw UUID), status eyebrow (QC/In Production/New), 'Due 2026-07-29' date, amount ('\u20b92,76,000'), and a 'View details' link with href '/orders/<id>'. Overflow (scrollWidth - clientWidth) = 0 at both 390 and 1920. Sticky 60px header with account menu (My Designs / My Orders / Profile & Address / Staff Login / Sign Out) still works. No JS page errors; only 3 unrelated network 401s (background fetch, not blocking).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/orders populated at 390px", "issues": ["Inside each .customer-order-card the two inner <div>s (info column + amount/view-details column) sit side-by-side even on the 390px viewport, causing the amount '\u20b92,76,000' to overlap on top of the wrapped 'Bespoke piece 51086C4E' heading. Consider stacking the two columns vertically (flex-direction: column) below ~500px so amount + View details sit under the info block."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "OPTIONAL polish: stack customer-order-card inner columns vertically at <=480px to avoid amount overlapping the heading on mobile (see design_issues)."
+  ],
+  "critical_code_review_comments": [
+    "CustomerOrdersPage.jsx: no AbortController cleanup for the /api/orders fetch on unmount (state update on unmounted component still possible).",
+    "startPayment shows 'Your secure payment window is ready to open.' but never opens any window - misleading UX.",
+    "CustomerAppHeader.jsx: account menu still has no outside-click / Escape close handler (unchanged from iteration_6).",
+    "CustomerAppHeader.jsx: avatar circle still shows hard-coded 'C' rather than deriving initial from the signed-in user's name."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only)", "frontend": "5/5 acceptance criteria PASS. Only remaining item is an optional mobile-column-stack polish."},
+  "test_credentials": "aarohi@cleliastudio-demo.com / Customer!2026Studio (from /app/memory/test_credentials.md); token via POST /api/auth/login placed in localStorage.clelia-customer-token.",
+  "seed_data_creation": "None - reused the 3 seeded sample orders on Aarohi.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iteration_6 layout bugs are fixed on https://luxe-maker-sandbox.preview.emergentagent.com/orders. Verified DOM values: emptyCount=1, errorMsgCount=0, iconWrap=96x96 radius 50%, svg=48x48, headings short (Bespoke piece <8-char>), date + amount + View details present, overflow=0 at 390 and 1920. Only remaining nit is 390px column overlap inside customer-order-card.",
+  "rca_of_the_issue": "N/A - iteration_6 bugs resolved. Fix confirmed in /app/frontend/src/pages/CustomerOrdersPage.jsx: (1) error branch now renders a single <section class='orders-empty'> with .orders-empty-icon wrapper and Package size=48, and no trailing <p data-testid='orders-error-message'>; (2) card heading uses `Bespoke piece ${String(order.id).slice(0,8).toUpperCase()}` instead of the raw UUID; (3) each card now includes a 'Due <date>' <p> and a `<Link data-testid='view-order-<id>'>View details</Link>`."
+}
