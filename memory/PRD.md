@@ -61,6 +61,12 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Added a unique email index and verified that a Staff token receives `403` on Manager-only content controls.
 - Added `auth_testing.md` with role-boundary checks for Manager, Staff and Customer access.
 
+## Live staff operations workspace — 2026-07-28
+- Replaced static Staff order-board values with authenticated `/api/staff/orders` data, live metrics and responsive empty/error behavior.
+- Seeded three staged demonstration commissions (New, In Production and QC) and their customer/design records for immediate staff-dashboard verification.
+- Refined staff layout for symmetry across desktop and mobile, adding shortened commission labels, a live date label and safe cancellation for stale requests.
+- Verified Staff can access the operations queue while Customer and anonymous requests are rejected; Staff remains denied from Manager-only content controls.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.

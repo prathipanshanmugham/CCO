@@ -16,16 +16,20 @@ export default function StaffDashboardPage() {
   const [error, setError] = useState("");
   const token = localStorage.getItem("clelia-staff-token");
   useEffect(() => {
+    const controller = new AbortController();
     fetch(`${process.env.REACT_APP_BACKEND_URL}/api/staff/orders`, {
+      signal: controller.signal,
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
       .then(setOrders)
-      .catch(() =>
-        setError(
-          "Please sign in with a staff account to view the order queue.",
-        ),
-      );
+      .catch((requestError) => {
+        if (requestError.name !== "AbortError")
+          setError(
+            "Please sign in with a staff account to view the order queue.",
+          );
+      });
+    return () => controller.abort();
   }, [token]);
   const nav = [
     [ListChecks, "Order Queue"],
@@ -63,7 +67,13 @@ export default function StaffDashboardPage() {
       <main className="staff-content">
         <header>
           <div>
-            <p className="eyebrow">Wednesday, 04 June</p>
+            <p className="eyebrow">
+              {new Intl.DateTimeFormat("en-IN", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+              }).format(new Date())}
+            </p>
             <h1 data-testid="staff-page-title">{active}</h1>
           </div>
           <button
@@ -140,28 +150,34 @@ export default function StaffDashboardPage() {
                   <div
                     className="table-row"
                     key={order.id}
-                    data-testid={`staff-order-${order.id.toLowerCase()}`}
+                    data-testid={`staff-order-${String(order.id || "order").toLowerCase()}`}
                   >
                     <span>
-                      <strong>{order.id}</strong>
+                      <strong>
+                        {String(order.id || "")
+                          .slice(0, 8)
+                          .toUpperCase()}
+                      </strong>
                       <small>{order.customer_id}</small>
                     </span>
                     <span>
-                      {order.design_id}
+                      {String(order.design_id || "")
+                        .slice(0, 8)
+                        .toUpperCase()}
                       <small>
                         ₹{(order.total || 0).toLocaleString("en-IN")}
                       </small>
                     </span>
                     <span>
                       <i
-                        className={`status-dot status-${order.production_status.toLowerCase().replaceAll(" ", "-")}`}
+                        className={`status-dot status-${(order.production_status || "New").toLowerCase().replaceAll(" ", "-")}`}
                       />
-                      {order.production_status}
+                      {order.production_status || "New"}
                     </span>
                     <span>{order.due_date || "Not set"}</span>
                     <button
                       className="table-action"
-                      data-testid={`open-order-${order.id.toLowerCase()}`}
+                      data-testid={`open-order-${String(order.id || "order").toLowerCase()}`}
                     >
                       Open
                     </button>
