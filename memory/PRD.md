@@ -67,6 +67,12 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Refined staff layout for symmetry across desktop and mobile, adding shortened commission labels, a live date label and safe cancellation for stale requests.
 - Verified Staff can access the operations queue while Customer and anonymous requests are rejected; Staff remains denied from Manager-only content controls.
 
+## Customer Orders responsive redesign — 2026-07-28
+- Added a persistent 60px customer header with a mobile-safe back control and account menu for customer navigation, sign-in and staff entry.
+- Rebuilt Orders with a centred 1100px container, responsive mobile/tablet padding, a single vertically centred empty state, and no page-level horizontal overflow.
+- Added responsive populated order cards with clear status, friendly order identifier, due date, amount and detail action.
+- QA confirmed all reported Orders acceptance criteria at 390px and 1920px: one empty state, correct icon treatment, sticky header/menu, responsive cards and zero overflow.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.
