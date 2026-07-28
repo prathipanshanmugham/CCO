@@ -147,6 +147,41 @@ export default function DesignStudioPage() {
       return;
     }
     if (step === 5) return setStep(6);
+    const token = localStorage.getItem("clelia-customer-token");
+    if (!token) {
+      return setError(
+        "Please sign in or create an account before saving your design.",
+      );
+    }
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/designs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            jewellery_type: type,
+            prompt: description,
+            model: "gpt-image-1",
+            specs: { metal },
+            references: [],
+          }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.detail || "We could not save your design.");
+      localStorage.setItem("clelia-last-design-id", data.id);
+      setError("Your design has been saved to your Design Vault.");
+    } catch (saveError) {
+      console.error("Design save failed", saveError);
+      setError(
+        saveError.message || "We could not save your design. Please try again.",
+      );
+    }
     const returnUrl = search.get("return_url");
     if (returnUrl) window.location.assign(returnUrl);
   };
