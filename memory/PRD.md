@@ -56,6 +56,11 @@ Build a self-hosted luxury jewellery co-creation platform where customers design
 - Webhook confirmation updates the customer order timeline and only then releases waiting production asset jobs.
 - Added Razorpay SDK and all required gateway/webhook environment documentation; gateway credentials and SMTP delivery credentials are still required for live payment and notifications.
 
+## RBAC seed baseline — 2026-07-27
+- Seeded one Manager and two Staff accounts with required TOTP secrets, documented in `memory/test_credentials.md`.
+- Added a unique email index and verified that a Staff token receives `403` on Manager-only content controls.
+- Added `auth_testing.md` with role-boundary checks for Manager, Staff and Customer access.
+
 ## Prioritized backlog
 ### P0
 - Connect customer/staff authentication forms to API and enforce protected frontend routes.

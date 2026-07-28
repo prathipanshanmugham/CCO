@@ -43,11 +43,11 @@ async def get_content_settings() -> dict:
 
 @app.on_event("startup")
 async def ensure_manager_account():
-    email = os.environ["MANAGER_EMAIL"].lower()
-    manager = await db.users.find_one({"email": email}, {"_id": 0})
-    if manager:
-        return
-    await db.users.insert_one({"id": new_id(), "name": "Clelia Studio Manager", "email": email, "role": "manager", "password_hash": hash_password(os.environ["MANAGER_PASSWORD"]), "totp_secret": os.environ["MANAGER_TOTP_SECRET"], "status": "active", "created_at": utc_now()})
+    await db.users.create_index("email", unique=True)
+    accounts = [("Clelia Studio Manager", os.environ["MANAGER_EMAIL"], os.environ["MANAGER_PASSWORD"], "manager"), ("Production Coordinator", os.environ["STAFF_ONE_EMAIL"], os.environ["STAFF_PASSWORD"], "staff"), ("Atelier Coordinator", os.environ["STAFF_TWO_EMAIL"], os.environ["STAFF_PASSWORD"], "staff")]
+    for name, email, password, role in accounts:
+        if not await db.users.find_one({"email": email.lower()}, {"_id": 0}):
+            await db.users.insert_one({"id": new_id(), "name": name, "email": email.lower(), "role": role, "password_hash": hash_password(password), "totp_secret": os.environ["MANAGER_TOTP_SECRET"] if role == "manager" else os.environ["STAFF_TOTP_SECRET"], "status": "active", "created_at": utc_now()})
 
 
 @api_router.get("/health")
