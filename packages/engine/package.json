@@ -1,0 +1,28 @@
+{
+  "name": "@clelia/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Procedural, parametric jewellery geometry in real millimetres, metal weight estimation and print-ready exporters (STL/3MF/OBJ/GLB) for Clelia & Co. and Scorpling.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./materials": "./src/materials.js",
+    "./exporters": "./src/exporters.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "echo \"@clelia/engine: no build step (plain ES modules)\"",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "three": "^0.183.0"
+  }
+}

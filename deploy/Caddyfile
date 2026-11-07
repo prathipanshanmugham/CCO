@@ -1,0 +1,26 @@
+{
+  email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+  encode zstd gzip
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+    Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+    -Server
+  }
+  request_body {
+    max_size 40MB
+  }
+  reverse_proxy app:4000 {
+    header_up X-Forwarded-Proto {scheme}
+  }
+  log {
+    output file /data/access.log {
+      roll_size 20mb
+      roll_keep 5
+    }
+  }
+}
